@@ -41,8 +41,11 @@
 */
 
 
+.extension-hotspot-visible{
+   display:block;
+}
 .extension-hotspot-hidden{
-   opacity:.1;
+   display:none;
 }
 
 .extension-hotspot-button{
@@ -540,9 +543,24 @@
     margin-top:2rem;
 }
 
+.extension-hotspot-domains:empty{
+    display:none;
+}
+
+.extension-hotspot-domains:not(:empty)::before{
+    content:"Attempted connections";
+    font-size:2.5rem;
+    width:100%;
+    padding:2rem 1rem;
+}
+
+
+
+/*
 .extension-hotspot-domains h4{
     margin-left:1rem;
 }
+*/
 
 .extension-hotspot-domains > div{
     border-radius:1rem;
