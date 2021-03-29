@@ -707,17 +707,10 @@ rsn_pairwise=CCMP"""
                     #os.system("sudo iptables -A FORWARD -i uap0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT")
                     os.system("sudo iptables -A FORWARD -i uap0 -o wlan0 -j ACCEPT")
                     os.system("sudo iptables -A FORWARD -d 192.168.12.0/24 -o uap0 -j ACCEPT")
-                    #os.system("sudo iptables -t nat -A POSTROUTING -o wlan0 -d 192.168.2.2 -j MASQUERADE")
-                    #os.system("sudo iptables -A PREROUTING -i uap0 -j ACCEPT")
         
         
-                    # THIS
-                    #os.system("sudo iptables -t nat -A POSTROUTING -o wlan0 -j MASQUERADE")
-        
-                    #os.system("iptables -t nat -A POSTROUTING -s 192.168.12.0/24 -j MASQUERADE")
                     # from: https://superuser.com/questions/684275/how-to-forward-packets-between-two-interfaces
         
-                    #os.system("iptables -t nat -A POSTROUTING -s 192.168.12.0/24 -j SNAT --to 192.168.2.166")
                     print("- addding NAT")
                     os.system("sudo iptables -t nat -A POSTROUTING -s 192.168.12.0/24 ! -d 192.168.12.0/24  -j MASQUERADE")
                     
@@ -826,10 +819,10 @@ rsn_pairwise=CCMP"""
                         break
                     if key.fileobj is self.dnsmasq_process.stdout:
                         #if self.DEBUG:
-                        print(f"STDOUT: {line}", end="", file=sys.stdout)
+                        #print(f"STDOUT: {line}", end="", file=sys.stdout)
                         self.parse_dnsmasq(f"{line}")
                     else:
-                        print(f"STDERR: {line}", end="", file=sys.stderr)
+                        #print(f"STDERR: {line}", end="", file=sys.stderr)
                         self.parse_dnsmasq(f"{line}")
                         
                         
