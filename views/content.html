@@ -1,0 +1,156 @@
+<div id="extension-hotspot-content" class="extension-hotspot-show-tab-timers">
+  
+    <div id="extension-hotspot-content-container">
+        <h3 id="extension-hotspot-title">Hotspot</h3>
+		
+		<div id="extension-hotspot-countdown" class="extension-hotspot-hiddenX">
+			<h2>The hotspot will launch in <span id="extension-hotspot-countdown-seconds">...</span> seconds.</h2>
+            <p>If this addon is somehow causing issues, you can abort it starting (and/or disable it in your <a href="/settings/addons">addons overview</a>).</p>
+			<button id="extension-hotspot-abort-button" class="extension-hotspot-button">Abort launch</button> <button id="extension-hotspot-launch-button" class="extension-hotspot-button">Launch now</button> <span id="extension-hotspot-abort-message"></span>
+		</div>
+		
+		
+		<div class="extension-hotspot-tab-buttons">
+            <button id="extension-hotspot-tab-button-timers" class="extension-hotspot-main-tab-button">Devices</button>
+			<button id="extension-hotspot-tab-button-satellites" class="extension-hotspot-main-tab-button">Activity</button>
+            <button id="extension-hotspot-tab-button-tutorial" class="extension-hotspot-main-tab-button">?</button>
+        </div>
+		
+		<div id="extension-hotspot-tabs-container">
+			
+			<div id="extension-hotspot-tab-timers" class="extension-hotspot-tab">
+				
+				<div id="extension-hotspot-list">    
+				</div>
+                
+                <div class="extension-hotspot-bottom-button-container">
+                    <button id="extension-hotspot-refresh-button" class="extension-hotspot-button">refresh</button>
+                </div>
+                
+                <div id="extension-hotspot-original-domain-item" class="extension-hotspot-domain-item">
+			        <div class="extension-hotspot-domain-info">
+                        <div class="extension-hotspot-domain-domain"></div>
+                        <div class="extension-hotspot-domain-count"></div>
+                    </div>
+                    <div class="extension-hotspot-domain-options">
+                        <div class="extension-hotspot-domain-permission"></div>
+                    </div>
+                    
+                </div>
+                
+				<div id="extension-hotspot-original-item" class="extension-hotspot-item">
+
+					<div class="extension-hotspot-item-setter">
+						<div class="extension-hotspot-icon">
+						</div>
+
+						<div class="extension-hotspot-nicename"></div>
+
+						<div class="extension-hotspot-line2">
+							<div class="extension-hotspot-ip"></div>
+							<div class="extension-hotspot-mac"></div>
+                            <div class="extension-hotspot-vendor"></div>
+                            
+						</div>
+                        <div class="extension-hotspot-line3">
+                            <h4 class="">Attempted connections</h4>
+                            <div class="extension-hotspot-domains">
+                            </div>
+                        </div>
+
+					</div>
+
+					<div class="extension-hotspot-item-menu">
+						<div class="extension-hotspot-item-right">
+							<div class="extension-hotspot-item-delete-button">&nbsp;</div>
+						</div>
+					</div>
+
+				</div>
+			</div>
+
+			
+			<div id="extension-hotspot-tab-satellites" class="extension-hotspot-tab">
+				<div id="extension-hotspot-satellites" class="extension-hotspot-centered-page">
+					<img src="/extensions/hotspot/images/satellites.png" alt="Satellites example"/>
+					<p>One microphone might not be enough to cover your entire home. That's why it's possible to create 'satellites'.</p> 
+					
+					<div class="extension-hotspot-no-satellites">
+						<p>If other controllers are detected on the network, satellite mode will become available here.</p>
+					</div>
+					<div id="extension-hotspot-loading"><img src="/extensions/hotspot/images/spinner.gif" width="32" height="32" alt="Loading..."/ style="opacity:.5"></div>
+					<div class="extension-hotspot-change-hostname-target">
+						<h4>Please change the name</h4>
+						<div class="extension-hotspot-select-satellites-question">
+							<p>All satellites should have a unique name. This controller is currently still using the default name "gateway". Please change it to something unique, for example, "kitchen" or "livingroom".</p>
+							<p><a href="/settings/domain"><button class="text-button">Change the name</button></a></p>
+						</div>
+					</div>
+					<div class="extension-hotspot-select-satellites">
+						<h4>Satellite mode</h4>
+						<div class="extension-hotspot-select-satellites-question">
+							<div id="extension-hotspot-server-list"></div>
+							<div id="extension-hotspot-server-list-toggle">
+								<form class="rule-switch switch">
+									<input type="checkbox" id="extension-hotspot-select-satellite-checkbox" class="switch-checkbox">
+									<label class="switch-slider extension-hotspot-switch-slider" for="extension-hotspot-select-satellite-checkbox">
+									</label>
+								</form>
+							</div>
+						</div>
+						<p>Select the main controller you wish to connect to, and then enable satelite mode.</p>
+						<p class="extension-hotspot-italic">Note: once in satellite mode, this device will no longer be able to control it's own things. It will only be able to control things or create timers on the main controller.</p>
+					
+					</div>
+				</div>
+
+			</div>
+
+
+			<div id="extension-hotspot-tab-tutorial" class="extension-hotspot-tab">
+				<div id="extension-hotspot-tutorial" class="extension-hotspot-centered-page">
+					<h2>How to use Hotspot</h2>
+					<p>Most privacy and security issues around smart homes are caused by wifi-enabled devices. These form a juicy target for hackers, since they can autonomously access the internet, and be a stepping stone to taking over other devices in your network.</p>
+                    <p>It's good practice to create a separate wifi network for your wifi-enabled smart home devices.</p>
+                    <p>This addon was created with a specific goal: to support the <a href="">Candle smart doorbell</a>.</p>
+                    
+                    <h4>Advantages</h4>
+					<ul>
+						<li>You can learn about all the connections that wifi devices make. You may be shocked to learn how they behave.</li>
+						<li>If someone steals your doorbell they may learn your wifi password. In this case, they'll only have the password to this separate network.</li>
+					</ul>
+                    
+                    <h4>Limitations</h4>
+                    <p>The wireless chip in your raspberry Pi is much less powerful than those found in dedicated wireless routers. Because of this there are some limitations to be aware of.</p>
+
+					<ul>
+						<li>There is less bandwidth available, and what's available has to be shared in two directions (to the real router, and to the connected devices).</li>
+						<li>You can't connect as many devices. If you want to connect multiple devices that require a lot of data transmission, such as network video cameras, then you may want to setup your real router to create a secondary network instead.</li>
+						<li>Please give me a list of all my alarms</li>
+					</ul>
+                    
+
+				</div>
+			</div>
+		</div>
+		
+		
+		
+		
+
+        <br/>
+        <br/>
+
+        <div id="extension-hotspot-response">
+            <p id="extension-hotspot-response-data" class="extension-hotspot-centered-error"></p>
+        </div>
+        <br/>
+
+    </div>
+    
+</div>
+
+
+
+
+
