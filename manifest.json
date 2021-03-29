@@ -28,6 +28,8 @@
     "default": {
 	  "Hotspot name":"Candle",
 	  "Hotspot password":"iloveprivacy",
+	  "Time server": true,
+	  "Use blocklist": true,
       "Debugging": false
     },
     "schema": {
@@ -40,6 +42,14 @@
             "description": "The password for the wifi hotspot.",
             "type": "string"
         },
+        "Use blocklist": {
+          "description": "Enabling this offer additional protection against behaviour tracking of your devices. This is done by blocking access to specific data collection servers that companies may use. Enabling this should not impede functionality.",
+          "type": "boolean"
+        },
+        "Time server": {
+          "description": "Your devices may want to incessantly ask for the time to various time servers, effectively revealing that your devices exist. If you enable this option, all those requests will be handled by this server intead, through some redirection.",
+          "type": "boolean"
+        },
         "Debugging": {
           "description": "Debugging allows you to diagnose any issues with the add-on. If enabled it will result in a lot more debug data in the internal log (which can be found under settings -> developer -> view internal logs).",
           "type": "boolean"
@@ -47,8 +57,7 @@
       },
       "required": [
 	    "Hotspot name",
-		"Hotspot password",
-        "Debugging"
+		"Hotspot password"
       ],
       "type": "object"
     }
