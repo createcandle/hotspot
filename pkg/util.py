@@ -13,6 +13,63 @@ from requests.adapters import HTTPAdapter
 import subprocess
 
 
+def get_own_mac(interface):
+
+  try:
+    mac = open('/sys/class/net/'+interface+'/address').readline()
+  except:
+    mac = "00:00:00:00:00:00"
+
+  return mac[0:17]
+  
+  
+def get_own_hostname():
+    try:
+        hostname = subprocess.check_output(['hostname'])
+        hostname = hostname.decode("utf-8")
+        hostname = hostname.replace("\n","")
+        return hostname
+    except Exception as ex:
+        print("Error while checking own hostname! Will default to 'gateway'. Error was: " + str(ex) )
+        return "gateway"
+
+
+def get_own_ip():
+    
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('10.255.255.255', 1))
+        IP = s.getsockname()[0]
+    except:
+        IP = None
+    finally:
+        s.close()
+    return IP
+
+
+
+def extract_mac(line):
+    p = re.compile(r'(?:[0-9a-fA-F]:?){12}')
+    return str(re.findall(p, line)[0])
+
+
+def extract_ip(line):
+    #p = re.compile(r"((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)([ (\[]?(\.|dot)[ )\]]?(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3})")
+    p = re.compile(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
+    return str(re.findall(p, line)[0])
+
+
+def valid_ip(ip):
+    return ip.count('.') == 3 and \
+        all(0 <= int(num) < 256 for num in ip.rstrip().split('.')) and \
+        len(ip) < 16 and \
+        all(num.isdigit() for num in ip.rstrip().split('.'))
+
+
+def valid_mac(mac):
+    return mac.count(':') == 5 and \
+        all(0 <= int(num, 16) < 256 for num in mac.rstrip().split(':')) and \
+        not all(int(num, 16) == 255 for num in mac.rstrip().split(':'))
 
 
 def is_a_number(s):
@@ -59,122 +116,20 @@ def get_api_url(link_list):
 
 
 
-def clean_up_string_for_speaking(sentence):
-    sentence = sentence.replace('/', ' ').replace('\\', ' ').replace('+', ' plus ').replace('#', ' number ').replace('-', ' ').replace('&', ' and ').replace('  ', ' ')
-    sentence = sentence.replace('  ', ' ')
-    return sentence
+
+
+  
+def execute(cmd):
+    popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+    for stdout_line in iter(popen.stderr.readline, ""):
+        yield stdout_line 
+    popen.stderr.close()
+    return_code = popen.wait()
+    if return_code:
+        raise subprocess.CalledProcessError(return_code, cmd)
 
 
 
-def split_sentences(st):
-    sentences = re.split(r'[.?!]\s*', st)
-    if sentences[-1]:
-        return sentences
-    else:
-        return sentences[:-1]
-
-        
-
-def is_color(color_name):
-    if color_name in color_dictionary:
-        return True
-    return False
-
-
-
-def color_name_to_hex(target_color):
-    print("target color: " + str(target_color))
-    try:
-        #hx = next(hex_color for hex_color, value in color_dictionary if value == color_name)
-        for current_name,current_hx in color_dictionary:
-            if str(current_name) == str(target_color):
-                print(str(target_color) + " matched " + str(current_hx))
-                return str(current_hx)
-    except:
-        print("couldn't match spoken color to a hex value. Returning red.")
-        return '#ff0000'                                   
-
-
-
-def hex_to_color_name(target_hx):
-    #hx = next(hex_color for hex_color, value in color_dictionary if value == color_name)
-    #print("__hex_to_color_name: hex to work with: " + str(target_hx))
-    if len(target_hx) == 7 and target_hx.startswith('#'):
-        #print("very likely a hex color")
-
-        try:
-            # if color is found in dict
-            try:
-                #quick_color_name = next(current_color for current_color, current_hx in color_dictionary if current_hx == target_hx)
-                quick_color_name = next(key for key, value in color_dictionary.items() if value == str(target_hx))
-                
-                #if str(quick_color_name) != "sorry":
-                #print("quick color match: " + str(quick_color_name))
-                return str(quick_color_name)
-
-            except:
-                pass
-                #print("Was not able to get a quick hex-to-color match, will try to find a neighbouring color.")
-
-            target_hx = target_hx.replace("#", "")
-
-            # return the closest available color
-            m = 16777215
-            k = '000000'
-            for current_color_name, current_hx in color_dictionary.items():
-            #for key in color_dictionary.keys():
-                current_hx = current_hx.replace("#", "")
-
-                a = int(target_hx[:2],16)-int(current_hx[:2],16)
-                b = int(target_hx[2:4],16)-int(current_hx[2:4],16)
-                c = int(target_hx[4:],16)-int(current_hx[4:],16)
-
-                v = a*a+b*b+c*c # simple measure for distance between colors
-
-                # v = (r1 - r2)^2 + (g1 - g2)^2 + (b1 - b2)^2
-
-                if v <= m:
-                    #print("smaller hex distance: " + str(v))
-                    m = v
-                    k = current_color_name
-
-            #print("__hex_to_color_name: matched color: " + str(color_dictionary[k]))
-            #print("__hex_to_color_name: closest matching hex color: " + str(k))
-            #slow_color_name = next(key for key, value in color_dictionary.items() if value == str(target_hx))
-            return str(k)
-        except Exception as ex:
-            print("Error while translating hex color to human readable name: " + str(ex))
-            return "red"
-    else:
-        #print("String was not a hex color?")
-        return target_hx
-
-
-def download_file(url, target_file):
-    #print("File to download: " + str(url))
-    #print("File to save to:  " + str(target_file))
-    try:
-        #if intended_filename == None:
-        intended_filename = target_file.split('/')[-1]
-        with requests.get(url, stream=True) as r:
-            with open(target_file, 'wb') as f:
-                shutil.copyfileobj(r.raw, f)
-    except Exception as ex:
-        print("ERROR downloading file: " + str(ex))
-        return False
-    #print("download_file: returning. Filename = " + str(intended_filename))
-    return True
-
-
-
-#def run_command(command, cwd=None):
-#    try:
-#        return_code = subprocess.call(command, shell=True, cwd=cwd)
-#        return return_code
-#
-#    except Exception as ex:
-#        print("Error running shell command: " + str(ex))
-        
 
 def run_command(cmd, timeout_seconds=20):
     try:
@@ -227,24 +182,9 @@ def run_command_with_lines(command):
 
 
 
-def get_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:
-        s.connect(('10.255.255.255', 1))
-        IP = s.getsockname()[0]
-    except:
-        IP = None
-    finally:
-        s.close()
-    return IP
 
 
 
-def valid_ip(ip):
-    return ip.count('.') == 3 and \
-        all(0 <= int(num) < 256 for num in ip.rstrip().split('.')) and \
-        len(ip) < 16 and \
-        all(num.isdigit() for num in ip.rstrip().split('.'))
 
 
 
