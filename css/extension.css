@@ -291,62 +291,26 @@
 
 
 
+/*  blocklist  */
 
 
-/*    please change hostname  */
-
-
-.extension-hotspot-change-hostname-target{
-	display:none;
-}
-.extension-hotspot-change-hostname .extension-hotspot-change-hostname-target{
-	display:block;
+#extension-hotspot-blocklist{
+    
 }
 
-
-/*    token input  */
-
-
-
-#extension-hotspot-add-token{
-	display:none;
-	padding:4rem;
-	max-width:80rem;
-	background-color:rgba(0,0,0,.2);
-	margin:4rem auto;
+#extension-hotspot-blocklist > div{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    align-items:center;
+    width:100%;
+    border-bottom: 1px dashed rgba(255,255,255,.15);
 }
-
-.extension-hotspot-add-token #extension-hotspot-add-token{
-	display:block;
-}
-
-#extension-hotspot-token-input{
-	width:100%;
-	height:10rem;
-	padding: 1rem;
-	font-size: 1.4rem;
-}
-
-#extension-hotspot-token-save-button{
-	cursor:pointer;
-}
-
-#extension-hotspot-add-token-message{
-	padding-left:2rem;
-}
-
-.extension-hotspot-fade-out{
-	animation: extension-hotspot-fadeOut 3s linear;
-}
-
-@keyframes extension-hotspot-fadeOut {
-   0% {opacity: 1;}
-   100% {opacity: 0;} 
-} 
 
 
 
 /*  Countdown & abort */
+
 #extension-hotspot-countdown{
     background-color:rgba(255,0,0,.5);
     padding:2rem;
@@ -549,9 +513,10 @@
 
 .extension-hotspot-domains:not(:empty)::before{
     content:"Attempted connections";
-    font-size:2.5rem;
+    font-size:2.2rem;
     width:100%;
     padding:2rem 1rem;
+    display: inline-block;
 }
 
 
@@ -616,12 +581,14 @@
 	display:none;
 }
 
+/*
 .extension-hotspot-potential-satellite .extension-hotspot-no-satellites{
 	display:none;
 }
 .extension-hotspot-potential-satellite .extension-hotspot-select-satellites{
 	display:block;
 }
+
 
 #extension-hotspot-loading{
 	text-align:center;
@@ -644,7 +611,7 @@
 #extension-hotspot-content input[type="radio"]{
 	padding:1rem;
 }
-
+*/
 
 
 @media screen and (min-width: 641px) {

@@ -12,7 +12,7 @@
 		
 		<div class="extension-hotspot-tab-buttons">
             <button id="extension-hotspot-tab-button-timers" class="extension-hotspot-main-tab-button">Devices</button>
-			<button id="extension-hotspot-tab-button-satellites" class="extension-hotspot-main-tab-button">Activity</button>
+			<button id="extension-hotspot-tab-button-satellites" class="extension-hotspot-main-tab-button">Blocklist</button>
             <button id="extension-hotspot-tab-button-tutorial" class="extension-hotspot-main-tab-button">?</button>
         </div>
 		
@@ -71,36 +71,11 @@
 			
 			<div id="extension-hotspot-tab-satellites" class="extension-hotspot-tab">
 				<div id="extension-hotspot-satellites" class="extension-hotspot-centered-page">
-					<img src="/extensions/hotspot/images/satellites.png" alt="Satellites example"/>
-					<p>One microphone might not be enough to cover your entire home. That's why it's possible to create 'satellites'.</p> 
+                    <h2>Blocklist</h2>
+					<p>These are all the domains that you have blocked so far.</p> 
 					
-					<div class="extension-hotspot-no-satellites">
-						<p>If other controllers are detected on the network, satellite mode will become available here.</p>
-					</div>
-					<div id="extension-hotspot-loading"><img src="/extensions/hotspot/images/spinner.gif" width="32" height="32" alt="Loading..."/ style="opacity:.5"></div>
-					<div class="extension-hotspot-change-hostname-target">
-						<h4>Please change the name</h4>
-						<div class="extension-hotspot-select-satellites-question">
-							<p>All satellites should have a unique name. This controller is currently still using the default name "gateway". Please change it to something unique, for example, "kitchen" or "livingroom".</p>
-							<p><a href="/settings/domain"><button class="text-button">Change the name</button></a></p>
-						</div>
-					</div>
-					<div class="extension-hotspot-select-satellites">
-						<h4>Satellite mode</h4>
-						<div class="extension-hotspot-select-satellites-question">
-							<div id="extension-hotspot-server-list"></div>
-							<div id="extension-hotspot-server-list-toggle">
-								<form class="rule-switch switch">
-									<input type="checkbox" id="extension-hotspot-select-satellite-checkbox" class="switch-checkbox">
-									<label class="switch-slider extension-hotspot-switch-slider" for="extension-hotspot-select-satellite-checkbox">
-									</label>
-								</form>
-							</div>
-						</div>
-						<p>Select the main controller you wish to connect to, and then enable satelite mode.</p>
-						<p class="extension-hotspot-italic">Note: once in satellite mode, this device will no longer be able to control it's own things. It will only be able to control things or create timers on the main controller.</p>
+					<div id="extension-hotspot-blocklist"></div>
 					
-					</div>
 				</div>
 
 			</div>
