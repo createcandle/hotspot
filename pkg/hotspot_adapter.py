@@ -109,7 +109,7 @@ class HotspotAdapter(Adapter):
         
         self.master_blocklist_file_path = os.path.join(self.dnsmasq_hosts_dir_path, "master_blocklist.txt")
         
-        self.multicast_replay_file_path = os.path.join(self.addon_path, "multicast-relay.py")
+        self.multicast_relay_file_path = os.path.join(self.addon_path, "multicast-relay.py")
         self.time_server_file_path = os.path.join(self.addon_path, "time_server.py")
         
         
@@ -617,173 +617,197 @@ rsn_pairwise=CCMP"""
               
         try:
             
+            # kill any potential left-overs
+            kill("multicast-relay.py --interfaces wlan0 uap0")
+            #kill("wpa_supplicant -B -c/etc/wpa_supplicant/wpa_supplicant.conf -iuap0")
+            os.system("sudo pkill hostapd")
+            
             # check if uap0 has already been created (e.g. is the addon is restarted)  
             uap_check = shell("ifconfig | grep 'uap0'")
             if 'uap0' in uap_check:
                 print("Error: uap0 was already set up?")
-           
-            else:
+                os.system("sudo iw dev uap0 del")
+                time.sleep(2)
+            
 			
-                # ifconfig explanation:
-                #http://litux.nl/Reference/books/7213/ddu0293.html
+            # ifconfig explanation:
+            #http://litux.nl/Reference/books/7213/ddu0293.html
+        
+            # dhcpcd needs to be down when the new interface is created, otherwise it will start wpa_supplicant for it, and that will create errors.
+            print("stopping dhcpcd")
+            os.system("sudo systemctl stop dhcpcd.service")
+            os.system("sudo pkill dhcpcd")
+            os.system("sudo systemctl stop wpa_supplicant.service")
+            kill("wpa_supplicant -B -c/etc/wpa_supplicant/wpa_supplicant.conf -iuap0")
+            #os.system("sudo wpa_cli terminate")
+            kill("/sbin/wpa_supplicant -u -s -O /run/wpa_supplicant")
+            #os.system("sudo pkill wpa_supplicant")
+            time.sleep(.1)
+            os.system("sudo rfkill unblock 0")
             
-                # dhcpcd needs to be down when the new interface is created, otherwise it will start wpa_supplicant for it, and that will create errors.
-                print("stopping dhcpcd")
-                os.system("sudo systemctl stop dhcpcd.service")
-                os.system("sudo pkill dhcpcd")
-                os.system("sudo systemctl stop wpa_supplicant.service")
-                #os.system("sudo wpa_cli terminate")
-                kill("/sbin/wpa_supplicant -u -s -O /run/wpa_supplicant")
-                #os.system("sudo pkill wpa_supplicant")
-                time.sleep(.1)
-                os.system("sudo rfkill unblock 0")
-                
-                #os.system("sudo dhcpcd --denyinterfaces uap0 --nohook wpa_supplicant")
-                #time.sleep(2)
-                print("adding uap0 interface")
-                os.system("sudo /sbin/iw phy phy0 interface add uap0 type __ap")
-                
-            	#sudo /sbin/iw phy phy0 interface add candle type __ap
-                time.sleep(.1)
-                print("setting mac")
-                os.system("sudo ifconfig uap0 hw ether " + str(self.mac_zero))
-                time.sleep(.1)
-                print("setting power save settings to off")
-                os.system("sudo iw dev wlan0 set power_save off")
-                os.system("sudo iw dev uap0 set power_save off")
+            #os.system("sudo dhcpcd --denyinterfaces uap0 --nohook wpa_supplicant")
+            #time.sleep(2)
+            print("adding uap0 interface")
+            os.system("sudo /sbin/iw phy phy0 interface add uap0 type __ap")
+            
+        	#sudo /sbin/iw phy phy0 interface add candle type __ap
+            time.sleep(.1)
+            print("setting mac")
+            os.system("sudo ifconfig uap0 hw ether " + str(self.mac_zero))
+            time.sleep(.1)
+            print("setting power save settings to off")
+            os.system("sudo iw dev wlan0 set power_save off")
+            os.system("sudo iw dev uap0 set power_save off")
 
-                print("adding iptables")
+            print("adding iptables")
 
+    
+            print("replacing old broad gateway iptables rules with more precise ip-based ones")
+            print("- removing 2 mangle rules")
+            #os.system("sudo iptables -t mangle --flush")
+            #os.system("sudo iptables -t nat --flush")
+    
+            os.system("sudo iptables -t mangle -D PREROUTING -p tcp --dport 80 -j MARK --set-mark 1")
+            os.system("sudo iptables -t mangle -D PREROUTING -p tcp --dport 443 -j MARK --set-mark 1")
+         
+    
+            print("- removing 2 'mark 0x1' input rules")
+            os.system("sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 8080 -m mark --mark 0x1 -j ACCEPT")
+            os.system("sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 4443 -m mark --mark 0x1 -j ACCEPT")
         
-                print("replacing old broad gateway iptables rules with more precise ip-based ones")
-                print("- removing 2 mangle rules")
-                #os.system("sudo iptables -t mangle --flush")
-                #os.system("sudo iptables -t nat --flush")
-        
-                os.system("sudo iptables -t mangle -D PREROUTING -p tcp --dport 80 -j MARK --set-mark 1")
-                os.system("sudo iptables -t mangle -D PREROUTING -p tcp --dport 443 -j MARK --set-mark 1")
-             
-        
-                print("- removing 2 'mark 0x1' input rules")
-                os.system("sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 8080 -m mark --mark 0x1 -j ACCEPT")
-                os.system("sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 4443 -m mark --mark 0x1 -j ACCEPT")
-            
-                print("- removing 2 port changing prerouting rules")
-                os.system("sudo iptables -t nat -D PREROUTING -p tcp -m tcp --dport 80 -j REDIRECT --to-ports 8080")
-                os.system("sudo iptables -t nat -D PREROUTING -p tcp -m tcp --dport 443 -j REDIRECT --to-ports 4443")
-                #os.system("sudo iptables -t mangle -A PREROUTING -p tcp --dport 80 -d 192.168.12.1 -j MARK --set-mark 1")
-                #os.system("sudo iptables -t mangle -A PREROUTING -p tcp --dport 443 -d 192.168.12.1 -j MARK --set-mark 1")
-                #os.system("sudo iptables -t mangle -A PREROUTING -p tcp --dport 80 -d " + str(self.ip_address) + " -j MARK --set-mark 1")
-                #os.system("sudo iptables -t mangle -A PREROUTING -p tcp --dport 443 -d " + str(self.ip_address) + " -j MARK --set-mark 1")
-        
-        
-                # forward incoming requests to ports 80 and 433 from the wlan side to the gateway UI
-                #os.system("iptables -t mangle -A PREROUTING -p tcp --dport 80 -d " + str(self.ip_address) + " -j MARK --set-mark 1")
-                #os.system("iptables -t mangle -A PREROUTING -p tcp --dport 4443 -d " + str(self.ip_address) + " -j MARK --set-mark 1")
-            
-            
-            
-                iptables_nat = shell("sudo iptables -t nat -S")
-                if "-A PREROUTING -p tcp --dport 80 -d 192.168.12.1 -j REDIRECT --to-port 8080" not in iptables_nat:
-            
-                    # shift internal ip address of gateway to port 8080 and 4443
-                    print("- addding ip-based port redirect for internal ip")
-                    os.system("sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -d 192.168.12.1 -j REDIRECT --to-port 8080")
-                    os.system("sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -d 192.168.12.1 -j REDIRECT --to-port 4443")
-        
-                    # shift external ip address of gateway to ports 8080 and 4443
-                    print("- addding ip-based port redirect for external ip")
-                    os.system("sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -d " + str(self.ip_address) + " -j REDIRECT --to-port 8080")
-                    os.system("sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -d " + str(self.ip_address) + " -j REDIRECT --to-port 4443")
-        
-                    # sudo iptables -t mangle -A PREROUTING -p tcp --dport 80 -d 192.168.2.165 -j MARK --set-mark 1
-                    print("finished replacing iptables to ports 8080 and 4443")
+            print("- removing 2 port changing prerouting rules")
+            os.system("sudo iptables -t nat -D PREROUTING -p tcp -m tcp --dport 80 -j REDIRECT --to-ports 8080")
+            os.system("sudo iptables -t nat -D PREROUTING -p tcp -m tcp --dport 443 -j REDIRECT --to-ports 4443")
+            #os.system("sudo iptables -t mangle -A PREROUTING -p tcp --dport 80 -d 192.168.12.1 -j MARK --set-mark 1")
+            #os.system("sudo iptables -t mangle -A PREROUTING -p tcp --dport 443 -d 192.168.12.1 -j MARK --set-mark 1")
+            #os.system("sudo iptables -t mangle -A PREROUTING -p tcp --dport 80 -d " + str(self.ip_address) + " -j MARK --set-mark 1")
+            #os.system("sudo iptables -t mangle -A PREROUTING -p tcp --dport 443 -d " + str(self.ip_address) + " -j MARK --set-mark 1")
+    
+    
+            # forward incoming requests to ports 80 and 433 from the wlan side to the gateway UI
+            #os.system("iptables -t mangle -A PREROUTING -p tcp --dport 80 -d " + str(self.ip_address) + " -j MARK --set-mark 1")
+            #os.system("iptables -t mangle -A PREROUTING -p tcp --dport 4443 -d " + str(self.ip_address) + " -j MARK --set-mark 1")
         
         
-                    print("- addding uap0 <-> wlan0 traversal")
-                    # THIS
-                    #os.system("sudo iptables -A FORWARD -i wlan0 -o uap0 -m state --state RELATED,ESTABLISHED -j ACCEPT")
-                    os.system("sudo iptables -A FORWARD -i wlan0 -o uap0 -j ACCEPT")
-                    #os.system("sudo iptables -A FORWARD -i uap0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT")
-                    os.system("sudo iptables -A FORWARD -i uap0 -o wlan0 -j ACCEPT")
-                    os.system("sudo iptables -A FORWARD -d 192.168.12.0/24 -o uap0 -j ACCEPT")
         
+            iptables_nat = shell("sudo iptables -t nat -S")
+            if "-A PREROUTING -p tcp --dport 80 -d 192.168.12.1 -j REDIRECT --to-port 8080" not in iptables_nat:
         
-                    # from: https://superuser.com/questions/684275/how-to-forward-packets-between-two-interfaces
-        
-                    print("- addding NAT")
-                    os.system("sudo iptables -t nat -A POSTROUTING -s 192.168.12.0/24 ! -d 192.168.12.0/24  -j MASQUERADE")
+                # shift internal ip address of gateway to port 8080 and 4443
+                print("- addding ip-based port redirect for internal ip")
+                os.system("sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -d 192.168.12.1 -j REDIRECT --to-port 8080")
+                os.system("sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -d 192.168.12.1 -j REDIRECT --to-port 4443")
+    
+                # shift external ip address of gateway to ports 8080 and 4443
+                print("- addding ip-based port redirect for external ip")
+                os.system("sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -d " + str(self.ip_address) + " -j REDIRECT --to-port 8080")
+                os.system("sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -d " + str(self.ip_address) + " -j REDIRECT --to-port 4443")
+    
+                # sudo iptables -t mangle -A PREROUTING -p tcp --dport 80 -d 192.168.2.165 -j MARK --set-mark 1
+                print("finished replacing iptables to ports 8080 and 4443")
+    
+    
+                print("- addding uap0 <-> wlan0 traversal")
+                # THIS
+                #os.system("sudo iptables -A FORWARD -i wlan0 -o uap0 -m state --state RELATED,ESTABLISHED -j ACCEPT")
+                os.system("sudo iptables -A FORWARD -i wlan0 -o uap0 -j ACCEPT")
+                #os.system("sudo iptables -A FORWARD -i uap0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT")
+                os.system("sudo iptables -A FORWARD -i uap0 -o wlan0 -j ACCEPT")
+                os.system("sudo iptables -A FORWARD -d 192.168.12.0/24 -o uap0 -j ACCEPT")
+    
+    
+                # from: https://superuser.com/questions/684275/how-to-forward-packets-between-two-interfaces
+    
+                print("- addding NAT")
+                os.system("sudo iptables -t nat -A POSTROUTING -s 192.168.12.0/24 ! -d 192.168.12.0/24  -j MASQUERADE")
+                
+                if not self.name_server.startswith("192.168.12"):
+                    print("blocking access to gateway UI from uap0 network")
+                    #os.system("sudo iptables -A FORWARD -d 192.168.2.2 -i uap0 -p udp --dport 53 -m iprange --src-range 192.168.12.2-192.168.12.255 -j ACCEPT")
+                    #os.system("sudo iptables -A FORWARD -d 192.168.2.2  -p tcp -m tcp --dport 80 -j DROP")
+                    #os.system("sudo iptables -A FORWARD -d 192.168.2.2  -p tcp -m tcp --dport 443 -j DROP")
+                    #os.system("sudo iptables -A FORWARD -d 192.168.2.2 -m iprange --src-range 192.168.12.2-192.168.12.255 -j DROP")
                     
-                    if not self.name_server.startswith("192.168.12"):
-                        print("blocking access to gateway UI from uap0 network")
-                        #os.system("sudo iptables -A FORWARD -d 192.168.2.2 -i uap0 -p udp --dport 53 -m iprange --src-range 192.168.12.2-192.168.12.255 -j ACCEPT")
-                        #os.system("sudo iptables -A FORWARD -d 192.168.2.2  -p tcp -m tcp --dport 80 -j DROP")
-                        #os.system("sudo iptables -A FORWARD -d 192.168.2.2  -p tcp -m tcp --dport 443 -j DROP")
-                        #os.system("sudo iptables -A FORWARD -d 192.168.2.2 -m iprange --src-range 192.168.12.2-192.168.12.255 -j DROP")
-                        
-                        #sudo iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination 192.0.2.2
-                        
-                        #sudo iptables -t nat -A PREROUTING -i uap0 -p udp --dport 123 -j DNAT --to-destination 192.0.2.2
-                        #iptables -t nat -A OUTPUT -p udp --dport 123 -j DNAT --to-destination 192.168.12.1:1620
-                        
-                        # Route NTP requests to the local server
-                        
-                        
-                        
-                        
-                        #os.system("sudo iptables -A FORWARD -i uap0 -d 192.168.2.2 -j DROP")
-                    if self.time_server:
-                        print("routing to local NTP time server")
-                        os.system("sudo iptables -t nat -A PREROUTING -i uap0 -p udp --dport 123 -j DNAT --to-destination 192.168.12.1:123")
-                        
-                    #os.system("iptables -A OUTPUT -p icmp --icmp-type echo-request -j DROP")
-        
-                    # https://linuxnatives.net/2014/create-wireless-access-point-hostapd
-        
-                    #os.system("sudo iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT")
-        
-        
-                    # The origina; iptables from the Gateway
-                    #iptables -t mangle -A PREROUTING -p tcp --dport 80 -j MARK --set-mark 1
-                    #iptables -t mangle -A PREROUTING -p tcp --dport 443 -j MARK --set-mark 1
-        
-                    #iptables -t mangle -A PREROUTING -p tcp --dport 80 -j MARK --set-mark 1
-                    #iptables -t mangle -A PREROUTING -p tcp --dport 443 -j MARK --set-mark 1
-        
-                
-                
-                
-                
-                #print("bringing uap0 up")
-                #os.system("sudo ifconfig uap0 up") # simpler
-                #time.sleep(2)
-                print(str(shell("ifconfig")))
+                    #sudo iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination 192.0.2.2
+                    
+                    #sudo iptables -t nat -A PREROUTING -i uap0 -p udp --dport 123 -j DNAT --to-destination 192.0.2.2
+                    #iptables -t nat -A OUTPUT -p udp --dport 123 -j DNAT --to-destination 192.168.12.1:1620
+                    
+                    # Route NTP requests to the local server
+                    
+                    
+                    
+                    
+                    #os.system("sudo iptables -A FORWARD -i uap0 -d 192.168.2.2 -j DROP")
+                if self.time_server:
+                    print("routing to local NTP time server")
+                    os.system("sudo iptables -t nat -A PREROUTING -i uap0 -p udp --dport 123 -j DNAT --to-destination 192.168.12.1:123")
+                    
+                #os.system("iptables -A OUTPUT -p icmp --icmp-type echo-request -j DROP")
+    
+                # https://linuxnatives.net/2014/create-wireless-access-point-hostapd
+    
+                #os.system("sudo iptables -A FORWARD -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT")
+    
+    
+                # The origina; iptables from the Gateway
+                #iptables -t mangle -A PREROUTING -p tcp --dport 80 -j MARK --set-mark 1
+                #iptables -t mangle -A PREROUTING -p tcp --dport 443 -j MARK --set-mark 1
+    
+                #iptables -t mangle -A PREROUTING -p tcp --dport 80 -j MARK --set-mark 1
+                #iptables -t mangle -A PREROUTING -p tcp --dport 443 -j MARK --set-mark 1
+    
+            
+            
+            
+            
+            #print("bringing uap0 up")
+            #os.system("sudo ifconfig uap0 up") # simpler
+            #time.sleep(2)
+            print(str(shell("ifconfig")))
 
 
-                print("adding ip addresses to uap0 interface")
-                
-                # once the interface gains an IP, avahi will spring into action.
-                os.system("sudo ifconfig uap0 192.168.12.1 netmask 255.255.255.0 broadcast 192.168.12.255") # simpler
-                
-                
-                print("__")
-                print("HOSTAPD COMMAND")
-                hostapd_command = "sudo /usr/sbin/hostapd -B " + self.hostapd_conf_file_path
-                print(str( hostapd_command ))
-                
-                kill(hostapd_command)
+            print("adding ip addresses to uap0 interface")
             
-                print("starting hostapd")
-                self.hostapd_process = subprocess.Popen(hostapd_command.split(), stdout=subprocess.PIPE, 
-                                     stderr=subprocess.PIPE, universal_newlines=True, preexec_fn=os.setpgrp)
-                print("hostapd PID = " + str(self.hostapd_process.pid))
-                self.hostapd_pid = self.hostapd_process.pid
-                self.child_pids.append(self.hostapd_process.pid)
+            # once the interface gains an IP, avahi will spring into action.
+            os.system("sudo ifconfig uap0 192.168.12.1 netmask 255.255.255.0 broadcast 192.168.12.255") # simpler
+            time.sleep(.1)
+            kill("wpa_supplicant -B -c/etc/wpa_supplicant/wpa_supplicant.conf -iuap0")
             
+            print("__")
+            print("HOSTAPD COMMAND")
+            hostapd_command = "sudo /usr/sbin/hostapd -B " + self.hostapd_conf_file_path
+            print(str( hostapd_command ))
             
-                print("starting dhcpcd again")
+            kill(hostapd_command)
+        
+            print("starting hostapd")
+            self.hostapd_process = subprocess.Popen(hostapd_command.split(), stdout=subprocess.PIPE, 
+                                 stderr=subprocess.PIPE, universal_newlines=True, preexec_fn=os.setpgrp)
+            print("hostapd PID = " + str(self.hostapd_process.pid))
+            self.hostapd_pid = self.hostapd_process.pid
+            self.child_pids.append(self.hostapd_process.pid)
+        
+        
+            dhcp_check = ""
+            
+            dhcp_check = shell("sudo /sbin/dhcpcd -w --denyinterfaces uap0")
+            print(str(dhcp_check))
+            if dhcp_check == "":
+                print("starting dhcpcd with denyinterfaces for uap0")
+                #print("removing old dhcpcd with denyinterfaces already in place")
+                #kill("sudo /sbin/dhcpcd -w --denyinterfaces uap0")
+                #time.sleep(1)
                 os.system("sudo /sbin/dhcpcd -w --denyinterfaces uap0") # --nohook wpa_supplicant")
                 time.sleep(3)
+            
+            
+            
+            kill("wpa_supplicant -B -c/etc/wpa_supplicant/wpa_supplicant.conf -iuap0")
+            
+            #print("starting multicast relay")
+            #os.system("python3 multicast-relay.py --homebrewNetifaces --ifNameStructLen 32 --interfaces wlan0 uap0")
+            os.system("python3 " + self.multicast_relay_file_path + " --interfaces wlan0 uap0")
             
             kill("ps ax | grep 'sudo dnsmasq -k -d --interface=uap0'")
             
@@ -793,55 +817,55 @@ rsn_pairwise=CCMP"""
             if self.use_blocklists:
                 hosts_part = " --hostsdir=" + self.dnsmasq_hosts_dir_path
  
-             dnsmasq_command = "sudo dnsmasq -k -d --interface=uap0 --no-daemon --log-async --conf-file=" + str(self.dnsmasq_conf_file_path) + hosts_part #  --no-hosts
+            dnsmasq_command = "sudo dnsmasq -k -d --interface=uap0 --no-daemon --log-async --conf-file=" + str(self.dnsmasq_conf_file_path) + hosts_part #  --no-hosts
+            # sudo dnsmasq -k -d --interface=uap0 --no-daemon --log-async --conf-file=/home/pi/.webthings/data/hotspot/dnsmasq.conf --hostsdir=/home/pi/.webthings/data/hotspot/hosts
 
-            print("__")
-            print("DNSMASQ COMMAND")
-            print(str( dnsmasq_command ))
 
-            self.dnsmasq_process = subprocess.Popen(dnsmasq_command.split(), stdout=subprocess.PIPE, 
-                                 stderr=subprocess.PIPE, universal_newlines=True, preexec_fn=os.setpgrp)
-            print("dnsmasq PID = " + str(self.dnsmasq_process.pid))
-            self.dnsmasq_pid = self.dnsmasq_process.pid
-            self.child_pids.append( self.dnsmasq_process.pid )
+            while self.running:
+                print("__")
+                print("DNSMASQ COMMAND")
+                print(str( dnsmasq_command ))
+                self.dnsmasq_process = subprocess.Popen(dnsmasq_command.split(), stdout=subprocess.PIPE, 
+                                     stderr=subprocess.PIPE, universal_newlines=True, preexec_fn=os.setpgrp)
+                print("dnsmasq PID = " + str(self.dnsmasq_process.pid))
+                self.dnsmasq_pid = self.dnsmasq_process.pid
+                self.child_pids.append( self.dnsmasq_process.pid )
 
-            # Read both stdout and stderr simultaneously
-            sel = selectors.DefaultSelector()
-            sel.register(self.dnsmasq_process.stdout, selectors.EVENT_READ)
-            sel.register(self.dnsmasq_process.stderr, selectors.EVENT_READ)
-            ok = True
-            while ok:
-                for key, val1 in sel.select():
-                    line = key.fileobj.readline()
-                    if not line:
-                        ok = False
-                        print("dnsmasq loop: ok was false")
-                        break
-                    if key.fileobj is self.dnsmasq_process.stdout:
-                        #if self.DEBUG:
-                        #print(f"STDOUT: {line}", end="", file=sys.stdout)
-                        self.parse_dnsmasq(f"{line}")
-                    else:
-                        #print(f"STDERR: {line}", end="", file=sys.stderr)
-                        self.parse_dnsmasq(f"{line}")
+                # Read both stdout and stderr simultaneously
+                sel = selectors.DefaultSelector()
+                sel.register(self.dnsmasq_process.stdout, selectors.EVENT_READ)
+                sel.register(self.dnsmasq_process.stderr, selectors.EVENT_READ)
+                ok = True
+                while ok:
+                    for key, val1 in sel.select():
+                        line = key.fileobj.readline()
+                        if not line:
+                            ok = False
+                            print("dnsmasq loop: ok was false")
+                            break
+                        if key.fileobj is self.dnsmasq_process.stdout:
+                            #if self.DEBUG:
+                            #print(f"STDOUT: {line}", end="", file=sys.stdout)
+                            self.parse_dnsmasq(f"{line}")
+                        else:
+                            #print(f"STDERR: {line}", end="", file=sys.stderr)
+                            self.parse_dnsmasq(f"{line}")
                         
                         
             print("BEYOND STARTING DNSMASQ")
-            print(str(shell("ifconfig")))
+            #print(str(shell("ifconfig")))
             
-            print("bringing uap0 up")
-            os.system("sudo ifconfig uap0 up")
+            #print("bringing uap0 up")
+            #os.system("sudo ifconfig uap0 up")
             
-            print("killing wpa_supplicant")
-            kill("wpa_supplicant -B -c/etc/wpa_supplicant/wpa_supplicant.conf -iuap0")
-            time.sleep(2)
-            kill("wpa_supplicant -B -c/etc/wpa_supplicant/wpa_supplicant.conf -iuap0")
+            #print("killing wpa_supplicant")
+            #kill("wpa_supplicant -B -c/etc/wpa_supplicant/wpa_supplicant.conf -iuap0")
+            #time.sleep(2)
+            #kill("wpa_supplicant -B -c/etc/wpa_supplicant/wpa_supplicant.conf -iuap0")
             #kill_uap0_wpa()
             
             
-            print("starting multicast relay")
-            #os.system("python3 multicast-relay.py --homebrewNetifaces --ifNameStructLen 32 --interfaces wlan0 uap0")
-            os.system("python3 multicast-relay.py --interfaces wlan0 uap0")
+
             #python3 multicast-relay.py --interfaces wlan0 uap0
             
                     

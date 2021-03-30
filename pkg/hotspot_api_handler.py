@@ -168,6 +168,14 @@ class HotspotAPIHandler(APIHandler):
                         print("- should remove domain from blocklist")
                         self.adapter.persistent_data['master_blocklist'].remove(domain)
                         self.adapter.update_dnsmasq()
+                        
+                        if self.adapter.dnsmasq_pid != None:
+                            print("sending sighup to " + str(self.adapter.dnsmasq_pid))
+                            #os.kill(self.adapter.dnsmasq_pid, SIGHUP)
+                            #os.system("sudo kill -SIGHUP " + str(self.adapter.dnsmasq_pid))
+                            os.system("sudo kill -s HUP " + str(self.adapter.dnsmasq_pid))
+                            # sudo kill -s HUP $pid
+                        
                     if permission == 'blocked' and domain not in self.adapter.persistent_data['master_blocklist']:
                         print("- should add domain to blocklist")
                         self.adapter.persistent_data['master_blocklist'].append(domain)
@@ -176,9 +184,7 @@ class HotspotAPIHandler(APIHandler):
                     
                     self.adapter.save_persistent_data()
                     
-                    if self.adapter.dnsmasq_pid != None:
-                        print("sending sighup")
-                        os.kill(self.adapter.dnsmasq_pid, SIGHUP)
+
                         
                     
                     return APIResponse(
@@ -187,16 +193,29 @@ class HotspotAPIHandler(APIHandler):
                       content=json.dumps({'state' : True, 'message': 'permission was changed', 'animals':self.adapter.persistent_data['animals'] }),
                     )
                     
-                elif action == 'add_to_master_blocklist':
-                    self.persistent_data['master_blocklist'].append(request.body['domain'])
+                elif action == 'remove_from_master_blocklist':
+                    self.adapter.persistent_data['master_blocklist'].remove(request.body['domain'])
                     #print("self.persistent_data['thing_settings'] = " + str(self.persistent_data['thing_settings'])) 
-                    self.save_persistent_data()
+                    self.adapter.save_persistent_data()
+                     
+                    return APIResponse(
+                      status=200,
+                      content_type='application/json',
+                      content=json.dumps({'state' : True, 'message': 'domain removed succesfully'}),
+                    )
+                    
+                elif action == 'add_to_master_blocklist':
+                    self.adapter.persistent_data['master_blocklist'].append(request.body['domain'])
+                    #print("self.persistent_data['thing_settings'] = " + str(self.persistent_data['thing_settings'])) 
+                    self.adapter.save_persistent_data()
                      
                     return APIResponse(
                       status=200,
                       content_type='application/json',
                       content=json.dumps({'state' : True, 'message': 'settings saved succesfully'}),
                     )
+                else:
+                    return APIResponse(status=404)
                     
             else:
                 return APIResponse(status=404)
