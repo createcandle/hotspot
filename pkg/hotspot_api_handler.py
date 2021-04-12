@@ -62,7 +62,7 @@ class HotspotAPIHandler(APIHandler):
             print("Failed to init UX extension API handler: " + str(e))
 
         
-                        
+        
 
 #
 #  HANDLE REQUEST
@@ -135,7 +135,7 @@ class HotspotAPIHandler(APIHandler):
                       content=json.dumps({'state' : True, 'message' : 'launch has been aborted' }),
                     )
                     
-                elif action == 'delete':
+                elif action == 'delete' or action == 'clear':
                     print('ajax handling delete')
                     #print("self.persistent_data = " + str(self.persistent_data))
                     mac = str(request.body['mac'])
