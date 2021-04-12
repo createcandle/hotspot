@@ -276,8 +276,8 @@
 					    {'action':'latest'}
 
 			        ).then((body) => {
-						//console.log("Python API /latest result:");
-						//console.log(body);
+						console.log("Python API /latest result:");
+						console.log(body);
 						this.attempts = 0;
                         
 						if(body['state'] == true){
@@ -290,7 +290,7 @@
 			
 						}
 						else{
-							//console.log("not ok response while getting items list");
+							console.log("not ok response while getting items list");
 							pre.innerText = body['update'];
 						}
 
@@ -318,7 +318,7 @@
 		//
 	    regenerate_items(){
             try {
-                
+                console.log("inn regenerate_items");
     			const pre = document.getElementById('extension-hotspot-response-data');
     			const list = document.getElementById('extension-hotspot-list');
     			const original = document.getElementById('extension-hotspot-original-item');
@@ -451,7 +451,11 @@
 					var clone = original.cloneNode(true);
 					clone.removeAttribute('id');
 
-
+                    //var protected_animal = false;
+                    //if( this.animals[mac].hasOwnProperty('protected') ){
+                    //    protected_animal = true;
+                    //}
+                    
                     const animal_parts = Object.keys(this.animals[mac]);
                     //console.log("animal parts: ");
                     //console.log(animal_parts)
@@ -482,6 +486,11 @@
                             const selector_name = '.extension-hotspot-' + info;
                             var target_element = clone.querySelectorAll( selector_name )[0];
                             target_element.appendChild(a);
+                        }
+                        else if(info == 'protected'){
+                            clone.querySelectorAll( '.extension-hotspot-domains' )[0].innerHTML = '<p class="extension-hotspot-privacy-warning">This device has connected to so many domains that it may be a laptop or mobile phone. To safeguard privacy its connection log will not be shown.</p>';
+                            clone.querySelectorAll( '.extension-hotspot-item-clear-button' )[0].remove();
+                            
                         }
                         else if(info == 'domains'){
                             try{
@@ -612,43 +621,46 @@
                     
 					// Add delete button click event
 					const clear_button = clone.querySelectorAll('.extension-hotspot-item-clear-button')[0];
-					clear_button.addEventListener('click', (event) => {
+                    if(clear_button){
+    					clear_button.addEventListener('click', (event) => {
                         
-                        if (confirm('Delete/Reset the record of this device\'s activities? This will not affect which servers are blocked in the blocklist.')) {
+                            if (confirm('Delete/Reset the record of this device\'s activities? This will not affect which servers are blocked in the blocklist.')) {
                             
-                            //console.log('Reset!');
+                                //console.log('Reset!');
                           
-    						window.API.postJson(
-    							`/extensions/hotspot/api/ajax`,
-    							{'action':'clear','mac':mac}
-    						).then((body) => { 
-    							//console.log("clear item reaction: ");
-    							//console.log(body);
-    							if( body['state'] != true ){
-    								pre.innerText = body['message'];
-    							}
-                                else{
-                                    this.get_latest();
-                                }
+        						window.API.postJson(
+        							`/extensions/hotspot/api/ajax`,
+        							{'action':'clear','mac':mac}
+        						).then((body) => { 
+        							//console.log("clear item reaction: ");
+        							//console.log(body);
+        							if( body['state'] != true ){
+        								pre.innerText = body['message'];
+        							}
+                                    else{
+                                        this.get_latest();
+                                    }
 
-    						}).catch((e) => {
-    							console.log("hotspot: error in clear device handler");
-    							pre.innerText = e.toString();
-    						});
+        						}).catch((e) => {
+        							console.log("hotspot: error in clear device handler");
+        							pre.innerText = e.toString();
+        						});
                         
-                        }
+                            }
                         
-                        /*
-						var target = event.currentTarget;
-						var parent3 = target.parentElement.parentElement.parentElement;
-						parent3.classList.add("delete");
-						var parent4 = parent3.parentElement;
-						parent4.removeChild(parent3);
-					    */
+                            /*
+    						var target = event.currentTarget;
+    						var parent3 = target.parentElement.parentElement.parentElement;
+    						parent3.classList.add("delete");
+    						var parent4 = parent3.parentElement;
+    						parent4.removeChild(parent3);
+    					    */
                         
-						// Send new values to backend
+    						// Send new values to backend
 
-				  	});
+    				  	});
+                    }
+					
                     
                     
                     
@@ -760,7 +772,7 @@
         //
         
         sort_items(type){
-            c//onsole.log("in sort_items. Type = " + type);
+            //console.log("in sort_items. Type = " + type);
             const sortChildren = ({ container, childSelector, getScore }) => {
               const items = [...container.querySelectorAll(childSelector)];
 
