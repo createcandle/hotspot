@@ -23,7 +23,7 @@
   "id": "hotspot",
   "license": "MPL-2.0",
   "manifest_version": 1,
-  "name": "Hotspot",
+  "name": "Candle hotspot",
   "options": {
     "default": {
 	  "Hotspot name":"Candle",

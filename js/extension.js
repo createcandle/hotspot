@@ -4,7 +4,7 @@
 	      	super('hotspot');
 			//console.log("Adding hotspot addon to menu");
       		
-			this.addMenuEntry('Hotspot');
+			this.addMenuEntry('Candle Hotspot');
 			
 			this.attempts = 0;
 
@@ -76,19 +76,19 @@
 			const pre = document.getElementById('extension-hotspot-response-data');
             const blocklist = document.getElementById('extension-hotspot-blocklist');
 
-            console.log("blocklist:");
-            console.log(blocklist);
+            //console.log("blocklist:");
+            //console.log(blocklist);
         
 
 				
 			document.getElementById('extension-hotspot-refresh-button').addEventListener('click', (event) => {
-				console.log("refresh button clicked");
+				//console.log("refresh button clicked");
 				this.get_latest();
 			});
             
             // Abort button
 			document.getElementById('extension-hotspot-abort-button').addEventListener('click', (event) => {
-				console.log("abort button clicked");
+				//console.log("abort button clicked");
 				
                 
 		        window.API.postJson(
@@ -96,8 +96,8 @@
 					{'action':'abort'}
 
 		        ).then((body) => {
-					console.log("abort response:");
-                    console.log(body);
+					//console.log("abort response:");
+                    //console.log(body);
                     this.aborted = true;
                     document.getElementById('extension-hotspot-abort-message').innerText = "Launch was aborted ";
                     
@@ -111,15 +111,15 @@
                 
             // Launch button
 			document.getElementById('extension-hotspot-launch-button').addEventListener('click', (event) => {
-				console.log("launch button clicked");
+				//console.log("launch button clicked");
                 
 		        window.API.postJson(
 		          `/extensions/hotspot/api/ajax`,
 					{'action':'launch'}
 
 		        ).then((body) => {
-					console.log("launch now response:");
-                    console.log(body);
+					//console.log("launch now response:");
+                    //console.log(body);
                     this.aborted = true;
                     document.getElementById('extension-hotspot-abort-message').innerText = "Launching...";
                     this.seconds = 89;
@@ -135,29 +135,29 @@
                 
             // Listen for changes in dropdowns
             main_view.addEventListener('change', function(event) {
-                console.log(event);
-              if (event.target.tagName.toLowerCase() === 'select') {
-                  console.log("clicked on select. value: " + event.target.value);
+                //console.log(event);
+                if (event.target.tagName.toLowerCase() === 'select') {
+                  //console.log("clicked on select. value: " + event.target.value);
                   const target = event.target;
                   
   				window.API.postJson(
   					`/extensions/hotspot/api/ajax`,
   					{'action':'set_permission','domain':target.dataset.domain, 'permission':target.value, 'mac':target.dataset.mac}
   				).then((body) => { 
-  					console.log("update permission reaction: ");
-  					console.log(body); 
+  					//console.log("update permission reaction: ");
+  					//console.log(body); 
   					if( body['state'] != true ){
   						pre.innerText = body['message'];
   					}
 
   				}).catch((e) => {
-  					console.log("hotspot: error in dropdown permissions handler");
+  					//console.log("hotspot: error in dropdown permissions handler");
   					pre.innerText = e.toString();
   				});
                   
               }
               else if (event.target.tagName.toLowerCase() === 'option') {
-                  console.log("clicked on option");
+                  //console.log("clicked on option");
               }
             });
                 
@@ -165,29 +165,29 @@
                 
             // Listen for remove buttons clicks in blocklist
             blocklist.addEventListener('click', function(event) {
-              console.log(event);
+              //console.log(event);
               if (event.target.tagName.toLowerCase() === 'button') {
                   //const classes = event.target.classList;
                   //if( classes.indexOf("extension-hotspot-blocklist-remove-button") >= 0 ){
                       
                   if( event.target.innerText == 'unblock'){
-                      console.log("clicked on unblock button.");
+                      //console.log("clicked on unblock button.");
                       
                       const target = event.target;
                   
-                      console.log("removing: " + target.dataset.domain);
+                      //console.log("removing: " + target.dataset.domain);
                       
         				window.API.postJson(
         					`/extensions/hotspot/api/ajax`,
         					{'action':'remove_from_master_blocklist','domain':target.dataset.domain}
         				).then((body) => { 
-        					console.log("remove from blocklist reaction: ");
-        					console.log(body); 
+        					//console.log("remove from blocklist reaction: ");
+        					//console.log(body); 
         					if( body['state'] != true ){
         						pre.innerText = body['message'];
                             }
                             else{
-                                console.log("should remove from list: " + target.dataset.domain);
+                                //console.log("should remove from list: " + target.dataset.domain);
                                 //this.get_latest();
                                 
                                 const blocklist_children = document.getElementById("extension-hotspot-blocklist").children;
@@ -276,8 +276,8 @@
 					    {'action':'latest'}
 
 			        ).then((body) => {
-						console.log("Python API /latest result:");
-						console.log(body);
+						//console.log("Python API /latest result:");
+						//console.log(body);
 						this.attempts = 0;
                         
 						if(body['state'] == true){
@@ -425,18 +425,18 @@
                 //
                 
                 list.innerHTML = "";
-                console.log(".")
-                console.log("..")
-                console.log("animals:");
+                //console.log(".")
+                //console.log("..")
+                //console.log("animals:");
                 //console.log(this.animals);
                 //console.log("looping over animals now:");
                 
                 const keys = Object.keys(this.animals);
 
                 // print all keys
-                console.log(keys);
+                //console.log(keys);
 
-                console.log("Active for more than 90 seconds. Currently no devices connected.");
+                //console.log("Active for more than 90 seconds. Currently no devices connected.");
                 if(keys.length == 0 ){
 					list.innerHTML = '<div class="extension-hotspot-centered-page" style="text-align:center"><p>There are currently no devices on the hotspot network.</p></div>';
 				    return;
@@ -457,7 +457,7 @@
                     //console.log(animal_parts)
 					animal_parts.forEach((info, index2) => {
                         if(info == 'nicename' || info == 'vendor' || info == 'mac'){
-                            console.log(`${info}: ${this.animals[mac][info]}`);
+                            //console.log(`${info}: ${this.animals[mac][info]}`);
                             if(info == 'vendor' && this.animals[mac][info] == 'unknown'){
                                 return;
                             }
@@ -485,11 +485,11 @@
                         }
                         else if(info == 'domains'){
                             try{
-                                console.log("generating domains list");
-                                console.log(this.animals[mac]['domains']);
+                                //console.log("generating domains list");
+                                //console.log(this.animals[mac]['domains']);
                                 const domains_list = Object.keys(this.animals[mac]['domains']);
-                                console.log("keys:");
-                                console.log(domains_list);
+                                //console.log("keys:");
+                                //console.log(domains_list);
                                 domains_list.forEach((domain, index3) => {
                                     
                 					var domain_clone = original_domain_item.cloneNode(true);
@@ -616,14 +616,14 @@
                         
                         if (confirm('Delete/Reset the record of this device\'s activities? This will not affect which servers are blocked in the blocklist.')) {
                             
-                            console.log('Reset!');
+                            //console.log('Reset!');
                           
     						window.API.postJson(
     							`/extensions/hotspot/api/ajax`,
     							{'action':'clear','mac':mac}
     						).then((body) => { 
-    							console.log("clear item reaction: ");
-    							console.log(body);
+    							//console.log("clear item reaction: ");
+    							//console.log(body);
     							if( body['state'] != true ){
     								pre.innerText = body['message'];
     							}
@@ -658,14 +658,14 @@
                         
                         if (confirm('Delete/Reset the record of this device\'s activities? This will not affect which servers are blocked in the blocklist.')) {
                             
-                            console.log('Reset!');
+                            //console.log('Reset!');
                           
     						window.API.postJson(
     							`/extensions/hotspot/api/ajax`,
     							{'action':'delete','mac':mac}
     						).then((body) => { 
-    							console.log("delete item reaction: ");
-    							console.log(body);
+    							//console.log("delete item reaction: ");
+    							//console.log(body);
     							if( body['state'] != true ){
     								pre.innerText = body['message'];
     							}
@@ -760,7 +760,7 @@
         //
         
         sort_items(type){
-            console.log("in sort_items. Type = " + type);
+            c//onsole.log("in sort_items. Type = " + type);
             const sortChildren = ({ container, childSelector, getScore }) => {
               const items = [...container.querySelectorAll(childSelector)];
 
