@@ -127,11 +127,8 @@ class HotspotAdapter(Adapter):
         if os.path.isfile(jump70):
             self.seconds = 70
             
-        #print("88?")
         jump88 = os.path.join(self.user_profile['addonsDir'], self.addon_name, "jump88")
-        #print("88 path: " + str(jump88))
         if os.path.isfile(jump88):
-            print("88 spotted")
             self.seconds = 88
 
         # Make sure the data directory exists
@@ -214,7 +211,7 @@ class HotspotAdapter(Adapter):
         self.dnsmasq_data = ""
         self.use_blocklists = True
         
-        
+        self.ethernet_connected = self.ethernet_check()
         
         
         # TODO DEV
@@ -314,15 +311,15 @@ class HotspotAdapter(Adapter):
         # Even if the user doesn't want to see a UI, it may be the case that the HTML is still loaded somewhere. So the API should be available regardless.
         
         try:
-            self.extension = HotspotAPIHandler(self, verbose=True)
-            #self.manager_proxy.add_api_handler(self.extension)
+            self.api_handler = HotspotAPIHandler(self, verbose=True)
+            #self.manager_proxy.add_api_handler(self.api_handler)
             if self.DEBUG:
                 print("Extension API handler initiated")
         except Exception as e:
             print("Failed to start API handler (this only works on gateway version 0.10 or higher). Error: " + str(e))
 
-    
-            
+        print("animal filtering:")
+        print(str( self.api_handler.filter_animals() ))
 
         
         #time.sleep(1)
@@ -612,7 +609,7 @@ rsn_pairwise=CCMP"""
         # enabling ip forwarding between interfaces within the pi itself
         os.system("sudo sysctl -w net.ipv4.ip_forward=1")
         #os.system("sudo sysctl -w net.ipv4.conf.uap0.route_localnet=1")
-        sleep(.1)
+        time.sleep(.1)
         
               
         try:
@@ -626,8 +623,12 @@ rsn_pairwise=CCMP"""
             uap_check = shell("ifconfig | grep 'uap0'")
             if 'uap0' in uap_check:
                 print("Error: uap0 was already set up?")
-                os.system("sudo iw dev uap0 del")
-                time.sleep(2)
+                if not self.ethernet_connected:
+                    print("restarting the hotspot addon is only supported if a network cable is attached. To restart the hotspot, please reboot the entire controller.")
+                    return
+                else:
+                    os.system("sudo iw dev uap0 del")
+                    time.sleep(2)
             
 			
             # ifconfig explanation:
@@ -1136,7 +1137,10 @@ rsn_pairwise=CCMP"""
             
         # remove uap0 interface
         os.system("sudo iw dev uap0 del")
-
+        
+        #disable transporting packets internally
+        os.system("sudo sysctl -w net.ipv4.ip_forward=0")
+        
         # restore services
         os.system("sudo systemctl start wpa_supplicant.service")
         os.system("sudo systemctl start dhcpcd.service")
@@ -1195,7 +1199,12 @@ rsn_pairwise=CCMP"""
             self.hostname = str(self.ip_address)        
         
 
-
+    def ethernet_check(self):
+        check = shell('ifconfig eth0')
+        if 'inet ' in check:
+            return True
+        else
+            return False
 
 
 def shell(command):

@@ -3,6 +3,7 @@
 import os
 import re
 import json
+import copy
 import time
 from time import sleep
 #import socket
@@ -110,7 +111,7 @@ class HotspotAPIHandler(APIHandler):
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message' : 'receiving updated data', 'animals': filtered_animals, 'master_blocklist': self.adapter.persistent_data['master_blocklist'], 'seconds':self.adapter.seconds }),
+                      content=json.dumps({'state' : True, 'message' : 'updated data deceived', 'animals': filtered_animals, 'master_blocklist': self.adapter.persistent_data['master_blocklist'], 'seconds':self.adapter.seconds }),
                     )
                     
                 elif action == 'abort':
@@ -234,24 +235,36 @@ class HotspotAPIHandler(APIHandler):
     #              E.g. detect any normal computers and filter those out.
     #
     def filter_animals(self):
-        print("in filtering animals")
-        raw_animals = {}
-        animals_to_remove = []
-        old_animals = dict(self.adapter.persistent_data['animals'])
+        #print("in filtering animals")
+        #raw_animals = {}
+        #animals_to_remove = []
+        #old_animals = dict(self.adapter.persistent_data['animals'])
+        new_animals = copy.deepcopy(self.adapter.persistent_data['animals'])
         #print("old animals:")
         #print(str(old_animals))
+        
         try:
-            raw_animals = self.adapter.persistent_data['animals']
+            #raw_animals = self.adapter.persistent_data['animals']
             #print("raw animals = " + str(raw_animals))
-            print("will loop over animals:")
-            for animal in self.adapter.persistent_data['animals']:
-                print("animal: " + str(animal))
+            #print("will loop over animals:")
+            for animal in new_animals.copy():
+                #print("animal: " + str(animal))
+                animal_count = len(new_animals[animal]['domains'].keys())
+                #print("animal count = " + str(animal_count))
+                if animal_count > 30:
+                    print("removing device with a lot of domains for privacy reasons: " + str(animal))
+                    #del new_animals[animal]['domains']
+                    #del new_animals[animal]['requests']
+                    new_animals[animal]['domains'] = {}
+                    new_animals[animal]['requests'] = []
+                    new_animals[animal]['protected'] = True
+                    
         
         except Exception as ex:
             print("Error while filtering out privacy sensitive data: " + str(ex))
-            return {}
+            return {"error":"Error while doing privacy filtering"}
         
-        return old_animals
+        return new_animals
         
         
         
