@@ -185,8 +185,19 @@
         					console.log(body); 
         					if( body['state'] != true ){
         						pre.innerText = body['message'];
-                                this.get_latest();
-        					}
+                            }
+                            else{
+                                console.log("should remove from list: " + target.dataset.domain);
+                                //this.get_latest();
+                                
+                                const blocklist_children = document.getElementById("extension-hotspot-blocklist").children;
+                                for (var i = 0; i < blocklist_children.length; i++) {
+                                  var child = blocklist_children[i];
+                                  if( child.dataset.domain == target.dataset.domain ){
+                                      document.getElementById("extension-hotspot-blocklist").removeChild(child);
+                                  }
+                                }
+                            }
 
         				}).catch((e) => {
         					console.log("hotspot: error in remove from blocklist handler");
@@ -371,6 +382,7 @@
                     const domain = this.master_blocklist[i];
                     
                     var f = document.createElement("div");
+                    f.setAttribute("data-domain", domain);
                     var y = document.createElement("span");
                     var s = document.createTextNode(domain);
                     y.appendChild(s);
