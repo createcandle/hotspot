@@ -125,7 +125,7 @@
 .extension-hotspot-item-setter{
 	color:white;
 	font-size: 1.8rem;
-	border-right: 1px solid rgba(255,255,255,.3);
+	/*border-right: 1px solid rgba(255,255,255,.3);*/
 	width:100%;
 	padding:2rem;
 	overflow: hidden;
@@ -151,7 +151,7 @@
 
 .extension-hotspot-item-menu{
     display:none;
-	display: flex;
+	/*display: flex;*/
 	flex-direction:column;
 	/*justify-content:space-around;*/
 	padding:2rem;
@@ -382,6 +382,13 @@
 	width:100%;
 }
 
+.extension-hotspot-line4{
+    text-align:right;
+}
+
+
+
+
 .extension-hotspot-thing:not(:empty):after{
 	content:' → ';
 }
@@ -508,6 +515,10 @@
 }
 
 .extension-hotspot-domains:empty{
+    display:none;
+}
+
+.extension-hotspot-domains:empty + button{
     display:none;
 }
 

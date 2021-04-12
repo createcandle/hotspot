@@ -170,8 +170,8 @@
                   //const classes = event.target.classList;
                   //if( classes.indexOf("extension-hotspot-blocklist-remove-button") >= 0 ){
                       
-                  if( event.target.innerText == 'remove'){
-                      console.log("clicked on remove button.");
+                  if( event.target.innerText == 'unblock'){
+                      console.log("clicked on unblock button.");
                       
                       const target = event.target;
                   
@@ -344,8 +344,8 @@
                 
                 // count
                 
-                const master_blocklist_length = this.master_blocklist.length;
-                console.log("master_blocklist_length = " + master_blocklist_length);
+                //const master_blocklist_length = this.master_blocklist.length;
+                //console.log("master_blocklist_length = " + master_blocklist_length);
                 
                 //console.log("__timestamps__");
                 //console.log(this.animals[mac]['domains'][domain]['timestamps']);
@@ -365,7 +365,7 @@
                 //select.setAttribute("data-mac", mac);
 
                 blocklist.innerHTML = "";
-                for (let i = 0; i < master_blocklist_length; i++) {
+                for (let i = 0; i < this.master_blocklist.length; i++) {
                     //console.log("[] adding " + select_options[i]);
                     //select.options.add(new Option(select_options[i], select_options[i]));
                     const domain = this.master_blocklist[i];
@@ -379,7 +379,7 @@
                     var g = document.createElement("button");
                     g.setAttribute("data-domain", domain);
                     g.setAttribute("class", "extension-hotspot-button extension-hotspot-blocklist-remove-button");
-                    var h = document.createTextNode("remove");
+                    var h = document.createTextNode("unblock");
                     g.appendChild(h);
                     f.appendChild(g);
                     
@@ -593,6 +593,52 @@
 
                     });
                         
+                        
+                    
+                    
+                    
+                    
+					// Add delete button click event
+					const clear_button = clone.querySelectorAll('.extension-hotspot-item-clear-button')[0];
+					clear_button.addEventListener('click', (event) => {
+                        
+                        if (confirm('Delete/Reset the record of this device\'s activities? This will not affect which servers are blocked in the blocklist.')) {
+                            
+                            console.log('Reset!');
+                          
+    						window.API.postJson(
+    							`/extensions/hotspot/api/ajax`,
+    							{'action':'clear','mac':mac}
+    						).then((body) => { 
+    							console.log("clear item reaction: ");
+    							console.log(body);
+    							if( body['state'] != true ){
+    								pre.innerText = body['message'];
+    							}
+                                else{
+                                    this.get_latest();
+                                }
+
+    						}).catch((e) => {
+    							console.log("hotspot: error in clear device handler");
+    							pre.innerText = e.toString();
+    						});
+                        
+                        }
+                        
+                        /*
+						var target = event.currentTarget;
+						var parent3 = target.parentElement.parentElement.parentElement;
+						parent3.classList.add("delete");
+						var parent4 = parent3.parentElement;
+						parent4.removeChild(parent3);
+					    */
+                        
+						// Send new values to backend
+
+				  	});
+                    
+                    
                     
 					// Add delete button click event
 					const delete_button = clone.querySelectorAll('.extension-hotspot-item-delete-button')[0];
