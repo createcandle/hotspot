@@ -264,7 +264,9 @@ class HotspotAPIHandler(APIHandler):
             print("Error while filtering out privacy sensitive data: " + str(ex))
             return {"error":"Error while doing privacy filtering"}
         
-        return new_animals
+        # TODO DEBUG TEMPORARY
+        return self.adapter.persistent_data['animals']
+        #return new_animals
         
         
         
