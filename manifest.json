@@ -29,6 +29,7 @@
 	  "Hotspot name":"Candle",
 	  "Hotspot password":"iloveprivacy",
 	  "Time server": true,
+	  "Multicast relay":false,
 	  "Use blocklist": true,
       "Debugging": false
     },
@@ -48,6 +49,10 @@
         },
         "Time server": {
           "description": "Your devices may want to incessantly ask for the time to various time servers, effectively revealing that your devices exist. If you enable this option, all those requests will be handled by this server intead, through some redirection.",
+          "type": "boolean"
+        },
+        "Multicast relay": {
+          "description": "This is an feature for advanced users. If enabled there is some communication between your home network and the hotspot network.",
           "type": "boolean"
         },
         "Debugging": {

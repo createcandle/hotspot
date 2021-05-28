@@ -9,8 +9,8 @@
 			this.attempts = 0;
 
 	      	this.content = '';
-            this.animals = undefined
-            this.master_blocklist = []
+            this.animals = undefined;
+            this.master_blocklist = [];
 			this.current_time = 0;
             
             this.seconds = 0;
