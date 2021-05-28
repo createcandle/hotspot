@@ -211,11 +211,13 @@ class HotspotAdapter(Adapter):
         self.dnsmasq_data = ""
         self.use_blocklists = True
         
+        self.use_multicast_relay = False
+        
         self.ethernet_connected = self.ethernet_check()
         
         
         # TODO DEV
-        os.system("sudo pkill dnsmasq")
+        #os.system("sudo pkill dnsmasq")
         
         
         
@@ -282,27 +284,6 @@ class HotspotAdapter(Adapter):
             print("internal time server started")
         
         
-        
-
-        # Create Hotspot device
-        try:
-            #hotspot_device = HotspotDevice(self, self.audio_output_options)
-            #self.handle_device_added(hotspot_device)
-            if self.DEBUG:
-                print("Hotspot thing created")
-        except Exception as ex:
-            print("Could not create hotspot device:" + str(ex))
-
-
-        # Stop Snips until the init is complete (if it is installed).
-        try:
-            #os.system("pkill -f snips") # Avoid snips running paralel
-            #self.devices['hotspot'].connected = False
-            #self.devices['hotspot'].connected_notify(False)
-            pass
-        except Exception as ex:
-            print("Could not stop Snips: " + str(ex))
-        
 
 
         #
@@ -317,9 +298,6 @@ class HotspotAdapter(Adapter):
                 print("Extension API handler initiated")
         except Exception as e:
             print("Failed to start API handler (this only works on gateway version 0.10 or higher). Error: " + str(e))
-
-        print("animal filtering:")
-        print(str( self.api_handler.filter_animals() ))
 
         
         #time.sleep(1)
@@ -465,7 +443,14 @@ class HotspotAdapter(Adapter):
             self.use_blocklists = bool(config['Use blocklist']) 
             if self.DEBUG:
                 print("-Blocklist preference was in config, and is now set to: " + str(self.use_blocklists))
-                  
+        
+        
+        if 'Multicast relay' in config:
+            self.use_multicast_relay = bool(config['Multicast relay']) 
+            if self.DEBUG:
+                print("-Multicast relay preference was in config, and is now set to: " + str(self.use_multicast_relay))
+        
+        
         if 'Time server' in config:
             self.time_server = bool(config['Time server']) 
             if self.DEBUG:
@@ -487,8 +472,6 @@ class HotspotAdapter(Adapter):
 
 
     def start_hostapd(self):
-        
-        
   
         # get/update network info
         try:
@@ -544,8 +527,8 @@ log-facility=-
 
 #log-facility=/tmp/candle_dnsmasq.log\n
 
-        dnsmasq_conf_string += "address=/" + self.hostname + ".local/192.168.12.1\n"
-        dnsmasq_conf_string += "address=/privacylabel.org/192.168.12.1\n"
+        #dnsmasq_conf_string += "address=/" + self.hostname + ".local/192.168.12.1\n"
+        #dnsmasq_conf_string += "address=/privacylabel.org/192.168.12.1\n"
 
         print("")
         print("___dnsmasq_conf_string___")
@@ -808,7 +791,10 @@ rsn_pairwise=CCMP"""
             
             #print("starting multicast relay")
             #os.system("python3 multicast-relay.py --homebrewNetifaces --ifNameStructLen 32 --interfaces wlan0 uap0")
-            os.system("python3 " + self.multicast_relay_file_path + " --interfaces wlan0 uap0")
+            if self.use_multicast_relay:
+                if self.DEBUG:
+                    print("starting multicast relay")
+                os.system("python3 " + self.multicast_relay_file_path + " --interfaces wlan0 uap0")
             
             kill("ps ax | grep 'sudo dnsmasq -k -d --interface=uap0'")
             
@@ -836,8 +822,8 @@ rsn_pairwise=CCMP"""
                 sel = selectors.DefaultSelector()
                 sel.register(self.dnsmasq_process.stdout, selectors.EVENT_READ)
                 sel.register(self.dnsmasq_process.stderr, selectors.EVENT_READ)
-                ok = True
-                while ok:
+
+                while self.running:
                     for key, val1 in sel.select():
                         line = key.fileobj.readline()
                         if not line:
@@ -1203,7 +1189,7 @@ rsn_pairwise=CCMP"""
         check = shell('ifconfig eth0')
         if 'inet ' in check:
             return True
-        else
+        else:
             return False
 
 
