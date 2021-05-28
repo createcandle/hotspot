@@ -235,6 +235,9 @@ class HotspotAPIHandler(APIHandler):
     #              E.g. detect any normal computers and filter those out.
     #
     def filter_animals(self):
+        
+
+        
         #print("in filtering animals")
         #raw_animals = {}
         #animals_to_remove = []
@@ -249,21 +252,24 @@ class HotspotAPIHandler(APIHandler):
             #print("will loop over animals:")
             for animal in new_animals.copy():
                 #print("animal: " + str(animal))
-                animal_count = len(new_animals[animal]['domains'].keys())
-                #print("animal count = " + str(animal_count))
-                if animal_count > 30:
-                    print("removing device with a lot of domains for privacy reasons: " + str(animal))
-                    #del new_animals[animal]['domains']
-                    #del new_animals[animal]['requests']
-                    new_animals[animal]['domains'] = {}
-                    new_animals[animal]['requests'] = []
-                    new_animals[animal]['protected'] = True
+                if 'domains' in new_animals[animal]:
+                    animal_count = len(new_animals[animal]['domains'].keys())
+                    #print("animal count = " + str(animal_count))
+                    if animal_count > 30:
+                        print("removing device with a lot of domains for privacy reasons: " + str(animal))
+                        #del new_animals[animal]['domains']
+                        #del new_animals[animal]['requests']
+                        new_animals[animal]['domains'] = {}
+                        new_animals[animal]['requests'] = []
+                        new_animals[animal]['protected'] = True
                     
         
         except Exception as ex:
             print("Error while filtering out privacy sensitive data: " + str(ex))
-            return {"error":"Error while doing privacy filtering"}
+            return {"error":"Error while doing privacy filtering: "  + str(ex) }
         
+
+
         # TODO DEBUG TEMPORARY
         return self.adapter.persistent_data['animals']
         #return new_animals
