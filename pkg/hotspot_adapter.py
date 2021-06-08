@@ -386,7 +386,7 @@ class HotspotAdapter(Adapter):
         while self.running:
             time.sleep(1)
             
-            print("self.last_any_domain_countdown = " + str(self.last_any_domain_countdown))
+            #print("self.last_any_domain_countdown = " + str(self.last_any_domain_countdown))
             if self.last_new_domain_countdown > 0:
                 self.last_new_domain_countdown -= 1
                 if self.last_new_domain_countdown == 0:
