@@ -147,6 +147,7 @@ class HotspotAPIHandler(APIHandler):
                         self.adapter.persistent_data['animals'][mac]['domains'] = {}
                         self.adapter.persistent_data['animals'][mac]['delete_timestamp'] = time.time()
                         state = True
+                        self.adapter.save_persistent_data()
                     except Exception as ex:
                         print("failed to delete item from dictionary")
                     

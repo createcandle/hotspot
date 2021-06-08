@@ -5,30 +5,31 @@ from gateway_addon import Device, Property
 # DEVICE
 #
 
-class VocoDevice(Device):
+class HotspotDevice(Device):
     """Candle device type."""
 
-    def __init__(self, adapter, audio_output_list):
+    def __init__(self, adapter):
         """
         Initialize the object.
         adapter -- the Adapter managing this device
         """
 
-        Device.__init__(self, adapter, 'voco')
+        Device.__init__(self, adapter, 'hotspot')
         
-        self._id = 'voco'
-        self.id = 'voco'
+        self._id = 'hotspot'
+        self.id = 'hotspot'
         self.adapter = adapter
 
-        self.name = 'voco'
-        self.title = 'Voice control'
-        self.description = 'Manage the Voco voice control add-on'
-        self._type = ['MultiLevelSwitch']
+        self.name = 'hotspot'
+        self.title = 'Hotspot'
+        self.description = 'Manage the Hotspot add-on'
+        self._type = ['OnOffSwitch']
         self.connected = False
         
         try:
-            #volume_property = VocoProperty(self,"volume",)
-            self.properties["volume"] = VocoProperty(
+            #volume_property = HotspotProperty(self,"volume",)
+            """
+            self.properties["volume"] = HotspotProperty(
                             self,
                             "volume",
                             {
@@ -39,9 +40,9 @@ class VocoDevice(Device):
                                 'maximum': 100,
                                 'unit':'percent'
                             },
-                            int(self.adapter.persistent_data['speaker_volume']) )
-
-            self.properties["status"] = VocoProperty(
+                            0 )
+            
+            self.properties["status"] = HotspotProperty(
                             self,
                             "status",
                             {
@@ -50,67 +51,56 @@ class VocoDevice(Device):
                                 'readOnly': True
                             },
                             "Hello")
-
-            self.properties["listening"] = VocoProperty(
+            """
+            self.properties["new"] = HotspotProperty(
                             self,
-                            "listening",
+                            "new",
                             {
                                 '@type':'OnOffProperty',
-                                'title': "Listening",
-                                'type': 'boolean'
+                                'title': 'New domain',
+                                'type': 'boolean',
+                                'readOnly': True
                             },
-                            bool(self.adapter.persistent_data['listening']) )
+                            False )
 
-            self.properties["feedback-sounds"] = VocoProperty(
+            self.properties["any"] = HotspotProperty(
                             self,
-                            "feedback-sounds",
+                            "any",
                             {
-                                'title': "Feedback sounds",
-                                'type': 'boolean'
+                                '@type':'OnOffProperty',
+                                'title': 'recent connection',
+                                'type': 'boolean',
+                                'readOnly': True
                             },
-                            bool(self.adapter.persistent_data['feedback_sounds']) )
-
-            self.properties["timer"] = VocoProperty(
+                            False )
+                            
+            self.properties["blocked"] = HotspotProperty(
                             self,
-                            "timer",
+                            "blocked",
                             {
-                                'title': "Timers",
+                                '@type':'OnOffProperty',
+                                'title': 'blocked connection',
+                                'type': 'boolean',
+                                'readOnly': True
+                            },
+                            False )
+            
+            """
+            self.properties["count"] = HotspotProperty(
+                            self,
+                            "count",
+                            {
+                                'title': "Count",
                                 'type': 'integer',
                                 'readOnly': True
                             },
                             0)
-            self.properties["alarm"] = VocoProperty(
-                            self,
-                            "alarm",
-                            {
-                                'title': "Alarms",
-                                'type': 'integer',
-                                'readOnly': True
-                            },
-                            0)
-            self.properties["reminder"] = VocoProperty(
-                            self,
-                            "reminder",
-                            {
-                                'title': "Reminders",
-                                'type': 'integer',
-                                'readOnly': True
-                            },
-                            0)
-            self.properties["countdown"] = VocoProperty(
-                            self,
-                            "countdown",
-                            {
-                                'title': "Countdown",
-                                'type': 'integer',
-                                'readOnly': True
-                            },
-                            0)
+            """                 
                                 
-                                
-            if self.adapter.DEBUG:
-                print("adding audio output property to Voco thing with list: " + str(audio_output_list))
-            self.properties["audio_output"] = VocoProperty(
+            #if self.adapter.DEBUG:
+            #    print("adding audio output property to Hotspot thing with list: " + str(audio_output_list))
+            """
+            self.properties["audio_output"] = HotspotProperty(
                             self,
                             "audio_output",
                             {
@@ -123,7 +113,7 @@ class VocoDevice(Device):
             if self.adapter.sound_detection:
                 if self.adapter.DEBUG:
                     print("adding sound detection property")
-                self.properties["sound_detected"] = VocoProperty(
+                self.properties["sound_detected"] = HotspotProperty(
                                 self,
                                 "sound_detected",
                                 {
@@ -132,11 +122,12 @@ class VocoDevice(Device):
                                     'readOnly': True
                                 },
                                 False)
-                                
+            """
+                
                                 
         except Exception as ex:
             print("error adding properties: " + str(ex))
-        print("Voco thing has been created")
+        print("Hotspot thing has been created")
         #self.adapter.handle_device_added(self)
 
 
@@ -145,7 +136,7 @@ class VocoDevice(Device):
 # PROPERTY
 #
 
-class VocoProperty(Property):
+class HotspotProperty(Property):
 
     def __init__(self, device, name, description, value):
         #print("")
@@ -165,6 +156,7 @@ class VocoProperty(Property):
             if self.device.adapter.DEBUG:
                 print("set_value called for: " + str(self.title))
                 
+            """
             if self.title == 'volume':
                 self.device.adapter.set_speaker_volume(int(value))
                 #self.update(value)
@@ -181,7 +173,8 @@ class VocoProperty(Property):
             if self.title == 'audio_output':
                 self.device.adapter.set_audio_output(str(value))
                 #self.update(value)
-                
+            """    
+            
         except Exception as ex:
             print("set_value error: " + str(ex))
 

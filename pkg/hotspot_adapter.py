@@ -39,7 +39,7 @@ except Exception as ex:
     
 from gateway_addon import Database, Adapter
 from .util import *
-#from .hotspot_device import *
+from .hotspot_device import *
 #from .hotspot_notifier import *
 
 try:
@@ -215,6 +215,10 @@ class HotspotAdapter(Adapter):
         
         self.ethernet_connected = self.ethernet_check()
         
+        self.last_new_domain_countdown = 0
+        self.last_any_domain_countdown = 0
+        self.last_blocked_domain_countdown = 0
+        self.domain_countdown_time = 5
         
         # TODO DEV
         #os.system("sudo pkill dnsmasq")
@@ -302,6 +306,18 @@ class HotspotAdapter(Adapter):
         
         #time.sleep(1)
 
+
+        # Create device
+        try:
+            hotspot_device = HotspotDevice(self)
+            self.handle_device_added(hotspot_device)
+            if self.DEBUG:
+                print("Hotspot thing created")
+        except Exception as ex:
+            print("Could not create hotspot device:" + str(ex))
+
+        
+
             
         # Create notifier
         try:
@@ -316,9 +332,9 @@ class HotspotAdapter(Adapter):
             print("Starting the internal clock")
         try:
             #self.t = threading.Thread(target=self.clock, args=(self.voice_messages_queue,))
-            #self.t = threading.Thread(target=self.clock)
-            #self.t.daemon = True
-            #self.t.start()
+            self.t = threading.Thread(target=self.clock)
+            self.t.daemon = True
+            self.t.start()
             pass
         except:
             print("Error starting the clock thread")
@@ -353,15 +369,41 @@ class HotspotAdapter(Adapter):
                     if self.seconds == 90:
                         if self.allow_launch == True:
                             print("CLOCK -> 90sec -> start hotspot")
-                            self.start_hostapd()
+                            self.start_hostapd() # it stops here
                             
                             #self.d = threading.Thread(target=self.start_hostapd)
                             #self.d.daemon = True
                             #self.d.start()
 
-
             except Exception as ex:
                 print("Error in dnsmasq loop: " + str(ex))
+                
+
+                
+                
+            
+    def clock(self):
+        while self.running:
+            time.sleep(1)
+            
+            print("self.last_any_domain_countdown = " + str(self.last_any_domain_countdown))
+            if self.last_new_domain_countdown > 0:
+                self.last_new_domain_countdown -= 1
+                if self.last_new_domain_countdown == 0:
+                    self.devices['hotspot'].properties['new'].update(False)
+                
+            if self.last_any_domain_countdown > 0:
+                self.last_any_domain_countdown -= 1
+                if self.last_any_domain_countdown == 0:
+                    self.devices['hotspot'].properties['any'].update(False)
+                
+            if self.last_blocked_domain_countdown > 0:
+                self.last_blocked_domain_countdown -= 1
+                if self.last_blocked_domain_countdown == 0:
+                    self.devices['hotspot'].properties['blocked'].update(False)
+            
+                
+                
 #
 #  GET CONFIG
 #
@@ -491,32 +533,40 @@ class HotspotAdapter(Adapter):
         dnsmasq_conf_string = """interface=lo,uap0
 no-dhcp-interface=lo,wlan0,eth0
 #strict-order
+dhcp-authoritative
+dhcp-rapid-commit
 bind-interfaces
 #bind-dynamic
 server=""" + self.name_server + "\n"
 
-        dnsmasq_conf_string += """#server=87.118.100.175
-domain-needed
+        dnsmasq_conf_string += """domain-needed
 #domain=uap
 #rebind_protection=0
 dns-loop-detect
+domain=local
 #local=/local/ 
+domain-needed
 bogus-priv
 #local-service
+cache-size=1500
+no-negcache
 dhcp-client-update
 dhcp-range=192.168.12.2,192.168.12.30,255.255.255.0,1h
 dhcp-option=option:router,192.168.12.1
-dhcp-option=option:dns-server,192.168.12.1"""
+#dhcp-option=option6:dns-server,[]
+dhcp-option=option:dns-server,192.168.12.1,""" + self.name_server + "\n"
 
 #dhcp-option=option:dns-server,192.168.12.1,""" + self.name_server + "\n"
 
 #dhcp-option=option:dns-server,192.168.12.1,8.8.8.8,""" + self.name_server + "\n"
 
-        dnsmasq_conf_string += "\n"
+        #dnsmasq_conf_string += "\n"
         dnsmasq_conf_string += """#dhcp-option=option:dns-server,192.168.12.1,192.168.2.2,8.8.8.8
 dhcp-option=option:ip-forward-enable,1
 dhcp-lease-max=10
-#listen-address=192.168.12.1
+dhcp-leasefile=""" + "/home/pi/.webthings/data/hotspot/leases.txt" + "\n"
+
+        dnsmasq_conf_string += """#listen-address=192.168.12.1
 log-queries
 log-dhcp
 log-facility=-
@@ -675,6 +725,9 @@ rsn_pairwise=CCMP"""
         
         
             iptables_nat = shell("sudo iptables -t nat -S")
+            print("----- IP TABLES ----")
+            print(iptables_nat)
+            print("----- - ---- - -- --")
             if "-A PREROUTING -p tcp --dport 80 -d 192.168.12.1 -j REDIRECT --to-port 8080" not in iptables_nat:
         
                 # shift internal ip address of gateway to port 8080 and 4443
@@ -691,19 +744,64 @@ rsn_pairwise=CCMP"""
                 print("finished replacing iptables to ports 8080 and 4443")
     
     
-                print("- addding uap0 <-> wlan0 traversal")
+                print("- addding uap0 <-> wlan0/eth0 traversal")
+                os.system("sudo iptables -A FORWARD -d 192.168.12.0/24 -o uap0 -j ACCEPT")
+                os.system("sudo ip6tables -A FORWARD -d ff02::1 -o uap0 -j ACCEPT")
+                
+
+                print("- addding NAT")
+                os.system("sudo iptables -t nat -A POSTROUTING -s 192.168.12.0/24 ! -d 192.168.12.0/24  -j MASQUERADE")
+                os.system("sudo ip6tables -t nat -A POSTROUTING -s ff02::1 ! -d ff02::1  -j MASQUERADE")
+                #os.system("sudo ip6tables -t nat -A POSTROUTING -s fd00::1 ! -d fd00::1  -j MASQUERADE")
+                
+                
+                # drop DHCP requests to get an IPV6 address.
+                os.system("sudo ip6tables -A INPUT -m state --state NEW -m udp -p udp -s fe80::/10 --dport 546 -j DROP")
+                
                 # THIS
                 #os.system("sudo iptables -A FORWARD -i wlan0 -o uap0 -m state --state RELATED,ESTABLISHED -j ACCEPT")
+                os.system("sudo iptables -A FORWARD -i eth0 -o uap0 -j ACCEPT")
+                os.system("sudo iptables -A FORWARD -i uap0 -o eth0 -j ACCEPT")
+                
                 os.system("sudo iptables -A FORWARD -i wlan0 -o uap0 -j ACCEPT")
+                
                 #os.system("sudo iptables -A FORWARD -i uap0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT")
                 os.system("sudo iptables -A FORWARD -i uap0 -o wlan0 -j ACCEPT")
-                os.system("sudo iptables -A FORWARD -d 192.168.12.0/24 -o uap0 -j ACCEPT")
+                
+                
+                os.system("sudo ip6tables -A FORWARD -i eth0 -o uap0 -j ACCEPT")
+                os.system("sudo ip6tables -A FORWARD -i uap0 -o eth0 -j ACCEPT")
+                
+                os.system("sudo ip6tables -A FORWARD -i wlan0 -o uap0 -j ACCEPT")
+                
+                #os.system("sudo iptables -A FORWARD -i uap0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT")
+                os.system("sudo ip6tables -A FORWARD -i uap0 -o wlan0 -j ACCEPT")
+                
+                # add ETH0 support?
+
+                
+                # allow ping explicitly, from inside to outside
+                #os.system("iptables -A OUTPUT -p icmp --icmp-type echo-request -j ACCEPT")
+                #os.system("iptables -A INPUT -p icmp --icmp-type echo-request -j ACCEPT")
+                #os.system("sudo iptables -A OUTPUT -p icmp -j ACCEPT")
+                #os.system("sudo iptables -A INPUT -p icmp -j ACCEPT")
+                
+                # allow everything on localhost
+                #os.system("sudo iptables -A INPUT -i lo -j ACCEPT")
+                #os.system("sudo iptables -A OUTPUT -o lo -j ACCEPT")
+                
+                
+                
     
     
                 # from: https://superuser.com/questions/684275/how-to-forward-packets-between-two-interfaces
     
-                print("- addding NAT")
-                os.system("sudo iptables -t nat -A POSTROUTING -s 192.168.12.0/24 ! -d 192.168.12.0/24  -j MASQUERADE")
+                
+                #os.system("sudo iptables -A FORWARD -d 192.168.2.2 -i uap0 -p udp --dport 53 -m iprange --src-range 192.168.12.2-192.168.12.255 -j ACCEPT")
+                #os.system("sudo iptables -A FORWARD -d 192.168.12.1 -i uap0 -p udp --dport 53 -m iprange --src-range 192.168.12.2-192.168.12.255 -j ACCEPT")
+                
+                os.system("sudo iptables -t nat -A PREROUTING -i uap0 -p udp --dport 53 -j DNAT --to-destination 192.168.12.1:53")
+                
                 
                 if not self.name_server.startswith("192.168.12"):
                     print("blocking access to gateway UI from uap0 network")
@@ -743,7 +841,8 @@ rsn_pairwise=CCMP"""
     
             
             
-            
+            else:
+                print("NOT ADDING EXTRA IPTABLES RULES (ALREADY EXISTED?)")
             
             #print("bringing uap0 up")
             #os.system("sudo ifconfig uap0 up") # simpler
@@ -828,7 +927,7 @@ rsn_pairwise=CCMP"""
                         line = key.fileobj.readline()
                         if not line:
                             ok = False
-                            print("dnsmasq loop: ok was false")
+                            #print("dnsmasq loop: ok was false")
                             break
                         if key.fileobj is self.dnsmasq_process.stdout:
                             #if self.DEBUG:
@@ -837,6 +936,7 @@ rsn_pairwise=CCMP"""
                         else:
                             #print(f"STDERR: {line}", end="", file=sys.stderr)
                             self.parse_dnsmasq(f"{line}")
+                    time.sleep(.1)
                         
                         
             print("BEYOND STARTING DNSMASQ")
@@ -882,7 +982,7 @@ rsn_pairwise=CCMP"""
             ip = str(line.split(' ')[-1])
             if not valid_ip(ip):
                 return
-                
+            
             domain = str(line.split(' ')[-3])
             print("spotted DNS query by: " + ip)
             print("-it was asking for: " + domain)
@@ -903,16 +1003,32 @@ rsn_pairwise=CCMP"""
                     
                 #if domain.startswith("www."):
                 #    domain = domain.replace("www.","") # hosts file needs precise domains, so removing www might not be a great idea.
-                    
+                
                 if "." in domain:
+                    print("a domain spotted")
+                    self.last_any_domain_countdown = self.domain_countdown_time
+                    self.devices['hotspot'].properties['any'].update(True)
+                    
                     if domain not in self.persistent_data['animals'][mac]['domains']:
                         self.persistent_data['animals'][mac]['domains'][domain] = {}
                         self.persistent_data['animals'][mac]['domains'][domain]['timestamps'] = []
+                        self.last_new_domain_countdown = self.domain_countdown_time
+                        print("new domain spotted")
+                        self.devices['hotspot'].properties['new'].update(True)
+                        
                         if domain in self.persistent_data['master_blocklist']:
                             self.persistent_data['animals'][mac]['domains'][domain]['permission'] = 'blocked'
+                            self.last_blocked_domain_countdown = self.domain_countdown_time
+                            print("new domain was in blocklist")
+                            self.devices['hotspot'].properties['blocked'].update(True)
+                            
                         else:
                             self.persistent_data['animals'][mac]['domains'][domain]['permission'] = 'allowed'
-                
+                    else:
+                        if domain in self.persistent_data['master_blocklist']:
+                            self.last_blocked_domain_countdown = self.domain_countdown_time
+                            self.devices['hotspot'].properties['blocked'].update(True)
+                            
                     self.persistent_data['animals'][mac]['domains'][domain]['timestamps'].append( time.time() )
                     
                 else:
