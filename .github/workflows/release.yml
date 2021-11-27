@@ -15,7 +15,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: grant permissions to shell script
-      run: chmod +x ./build.sh
+      run: sudo chmod +x ./build.sh
     - name: Package project
       run: |
         ./build.sh linux-arm python 3.5
