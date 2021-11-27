@@ -14,8 +14,10 @@ jobs:
       uses: bruceadams/get-release@v1.2.2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: grant permissions to shell script
+    - name: grant permissions to build script
       run: sudo chmod +x ./build.sh
+    - name: grant permissions to package script
+      run: sudo chmod +x ./package.sh
     - name: Package project
       run: |
         ./build.sh linux-arm python 3.5
