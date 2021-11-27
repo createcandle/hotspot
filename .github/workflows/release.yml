@@ -65,6 +65,10 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.version }}
+    - name: grant permissions to build script
+      run: sudo chmod +x ./build.sh
+    - name: grant permissions to package script
+      run: sudo chmod +x ./package.sh
     - name: Build adapter
       run: |
         ./build.sh "${{ matrix.platform }}" "${{ matrix.language }}" "${{ matrix.version }}"
