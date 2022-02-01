@@ -272,8 +272,8 @@ class HotspotAPIHandler(APIHandler):
 
 
         # TODO DEBUG TEMPORARY
-        return self.adapter.persistent_data['animals']
-        #return new_animals
+        #return self.adapter.persistent_data['animals']
+        return new_animals
         
         
         
