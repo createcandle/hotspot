@@ -32,14 +32,14 @@
 		
 
 		hide() {
-			console.log("hotspot hide called");
+			//console.log("hotspot hide called");
 			try{
                 this.attempts = 0;
 				clearInterval(this.interval);
-				console.log("interval cleared");
+				//console.log("interval cleared");
 			}
 			catch(e){
-				console.log("no interval to clear? " + e);
+				//console.log("no interval to clear? " + e);
 			}
 		}
 		
@@ -57,7 +57,7 @@
 				clearInterval(this.interval);
 			}
 			catch(e){
-				console.log("no interval to clear?: " + e);
+				//console.log("no interval to clear?: " + e);
 			}
 			
 			
@@ -102,7 +102,7 @@
                     document.getElementById('extension-hotspot-abort-message').innerText = "Launch was aborted ";
                     
 		        }).catch((e) => {
-		  			console.log("Error sending abort command: " + e.toString());
+		  			//console.log("Error sending abort command: " + e.toString());
 					document.getElementById('extension-hotspot-abort-message').innerText = "Error sending abort command: " + e.toString();
 		        });
                 
@@ -125,7 +125,7 @@
                     this.seconds = 89;
                     
 		        }).catch((e) => {
-		  			console.log("Error sending abort command: " + e.toString());
+		  			//console.log("Error sending abort command: " + e.toString());
 					document.getElementById('extension-hotspot-abort-message').innerText = "Error sending abort command: " + e.toString();
 		        });
                 
@@ -200,7 +200,7 @@
                             }
 
         				}).catch((e) => {
-        					console.log("hotspot: error in remove from blocklist handler");
+        					//console.log("hotspot: error in remove from blocklist handler");
         					pre.innerText = e.toString();
         				});
                   }
@@ -261,7 +261,7 @@
         
         
         get_latest(){
-            console.log("in get_latest");
+            //console.log("in get_latest");
             const main_view = document.getElementById('extension-hotspot-view');
             const pre = document.getElementById('extension-hotspot-response-data');
 			
@@ -276,8 +276,8 @@
 					    {'action':'latest'}
 
 			        ).then((body) => {
-						console.log("Python API /latest result:");
-						console.log(body);
+						//console.log("Python API /latest result:");
+						//console.log(body);
 						this.attempts = 0;
                         
 						if(body['state'] == true){
@@ -290,13 +290,13 @@
 			
 						}
 						else{
-							console.log("not ok response while getting items list");
+							//console.log("not ok response while getting items list");
 							pre.innerText = body['update'];
 						}
 
 			        }).catch((e) => {
 			  			//console.log("Error getting timer items: " + e.toString());
-						console.log(e);
+						//console.log(e);
 						pre.innerText = "Loading items failed - connection error";
 						this.attempts = 0;
 			        });	
@@ -306,7 +306,7 @@
 				}
                 
 			}
-            catch(e){"Hotspot polling error: " + console.log(e)}
+            catch(e){"Hotspot polling error: " + //console.log(e)}
             
         }
         
@@ -318,7 +318,7 @@
 		//
 	    regenerate_items(){
             try {
-                console.log("inn regenerate_items");
+                //console.log("inn regenerate_items");
     			const pre = document.getElementById('extension-hotspot-response-data');
     			const list = document.getElementById('extension-hotspot-list');
     			const original = document.getElementById('extension-hotspot-original-item');
@@ -563,14 +563,14 @@
                                     //console.log("adding change event listener to dropdown:");
                                     //console.log(permission_select);
                 					permission_select.addEventListener('click', (event) => {
-                                        console.log("change detected");
+                                        //console.log("change detected");
                                         event.stopImmediatePropagation();
                                         
                                         //target.dataset.domain
                                         
                                         
                 						var target = event.currentTarget;
-                                        console.log(target);
+                                        //console.log(target);
                                         
                                         
                 						//var parent3 = target.parentElement.parentElement.parentElement;
@@ -578,8 +578,8 @@
                 						//var parent4 = parent3.parentElement;
                 						//parent4.removeChild(parent3);
 					                    
-                                        console.log(target.dataset.domain);
-                                        console.log(target.dataset.mac);
+                                        //console.log(target.dataset.domain);
+                                        //console.log(target.dataset.mac);
                                         
                                         
                 						// Send new values to backend
@@ -587,14 +587,14 @@
                 							`/extensions/${this.id}/api/ajax`,
                 							{'action':'set_permission','domain':target.dataset.domain, 'permission':target.value, 'mac':target.dataset.mac}
                 						).then((body) => { 
-                							console.log("update permission reaction: ");
-                							console.log(body); 
+                							//console.log("update permission reaction: ");
+                							//console.log(body); 
                 							if( body['state'] != true ){
                 								pre.innerText = body['message'];
                 							}
 
                 						}).catch((e) => {
-                							console.log("hotspot: error in save items handler");
+                							//console.log("hotspot: error in save items handler");
                 							pre.innerText = e.toString();
                 						});
 					
@@ -606,8 +606,8 @@
                                 });
                             }
                             catch(e){
-                                console.log("Error while creating domains list: ");
-                                console.log(e);
+                                //console.log("Error while creating domains list: ");
+                                //console.log(e);
                             }
 
                         }
@@ -642,7 +642,7 @@
                                     }
 
         						}).catch((e) => {
-        							console.log("hotspot: error in clear device handler");
+        							//console.log("hotspot: error in clear device handler");
         							pre.innerText = e.toString();
         						});
                         
@@ -686,7 +686,7 @@
                                 }
 
     						}).catch((e) => {
-    							console.log("hotspot: error in delete device handler");
+    							//console.log("hotspot: error in delete device handler");
     							pre.innerText = e.toString();
     						});
                         
@@ -762,7 +762,7 @@
 			}
 			catch (e) {
 				// statements to handle any exceptions
-				console.log(e); // pass exception object to error handler
+				//console.log(e); // pass exception object to error handler
 			}
 		}
         
