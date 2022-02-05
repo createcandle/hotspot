@@ -100,8 +100,11 @@
         				if(typeof body.ssid !='undefined'){
         				    if(body.ssid){
         				        document.getElementById('extension-hotspot-ssid').innerText = body.ssid;
+                                document.getElementById('extension-hotspot-password').innerText = body.password;
                                 document.getElementById('extension-hotspot-ssid-container').classList.remove('extension-hotspot-hidden');
         				    }
+                            
+                            
         				}
                     }
                     

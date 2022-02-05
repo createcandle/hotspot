@@ -347,7 +347,10 @@
     margin:0 auto;
     font-style:italic;
 }
-#extension-hotspot-ssid{
+
+
+#extension-hotspot-ssid,
+#extension-hotspot-password{
     font-weight:bold;
 }
 

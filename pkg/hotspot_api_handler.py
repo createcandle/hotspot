@@ -94,7 +94,7 @@ class HotspotAPIHandler(APIHandler):
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message' : 'initialization complete', 'ssid':self.adapter.ssid, 'cable_needed':self.adapter.cable_needed, 'debug': self.DEBUG}),
+                      content=json.dumps({'state' : True, 'message' : 'initialization complete', 'ssid':self.adapter.ssid, 'password':self.adapter.hotspot_password , 'cable_needed':self.adapter.cable_needed, 'debug': self.DEBUG}),
                     )
                     
                 elif action == 'latest':
