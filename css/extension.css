@@ -55,6 +55,12 @@
     border-radius: 0.5rem;
     margin: 1rem 0;
     cursor:pointer;
+    color:white;
+    background-color:rgba(0,0,0,.2);
+}
+
+.extension-hotspot-button:hover{
+    background-color:rgba(0,0,0,.3);
 }
 
 
@@ -314,27 +320,43 @@
 #extension-hotspot-countdown{
     background-color:rgba(255,0,0,.5);
     padding:2rem;
-    margin:2rem 0;
+    margin:2rem auto;
 }
 
 
 
-
+.extension-hotspot-centered-info,
 .extension-hotspot-centered-error,
 .extension-hotspot-centered-page{
 	padding:2rem;
 	max-width:60rem;
 	margin: 4rem auto;
+    line-height: 2.5rem;
 }
 
+#extension-hotspot-ssid-container,
 .extension-hotspot-centered-error{
 	text-align:center;
 }
 
+.extension-hotspot-centered-info{
+    background-color:rgba(0,0,0,.1);
+}
+
+#extension-hotspot-ssid-container{
+    margin:0 auto;
+    font-style:italic;
+}
+#extension-hotspot-ssid{
+    font-weight:bold;
+}
+
+
+/*
 .extension-hotspot-centered-page{
 	border-bottom:1px solid rgba(255,255,255,.3);
 }
-
+*/
 
 .extension-hotspot-type{
 	width:4rem;
@@ -597,6 +619,15 @@
 .extension-hotspot-select-satellites{
 	display:none;
 }
+
+
+
+/*  buttons  */
+
+#extension-hotspot-bottom-button-container{
+    margin-top:2rem;
+}
+
 
 /*
 .extension-hotspot-potential-satellite .extension-hotspot-no-satellites{

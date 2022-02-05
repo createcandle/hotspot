@@ -32,7 +32,7 @@ class HotspotAPIHandler(APIHandler):
 
     def __init__(self, adapter, verbose=False):
         """Initialize the object."""
-        print("INSIDE API HANDLER INIT")
+        #print("INSIDE API HANDLER INIT")
         
         self.adapter = adapter
         #self.addon_name = 'hootspot-handler'
@@ -50,7 +50,7 @@ class HotspotAPIHandler(APIHandler):
             with open(manifest_fname, 'rt') as f:
                 manifest = json.load(f)
 
-            print("manifest id in hotspot handler: " + str(manifest['id']))
+            #print("manifest id in hotspot handler: " + str(manifest['id']))
             APIHandler.__init__(self, manifest['id'])
             self.manager_proxy.add_api_handler(self)
             
@@ -94,7 +94,7 @@ class HotspotAPIHandler(APIHandler):
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message' : 'initialisation complete', 'animals': self.adapter.persistent_data['animals'] }),
+                      content=json.dumps({'state' : True, 'message' : 'initialization complete', 'ssid':self.adapter.ssid, 'cable_needed':self.adapter.cable_needed, 'debug': self.DEBUG}),
                     )
                     
                 elif action == 'latest':
@@ -111,7 +111,7 @@ class HotspotAPIHandler(APIHandler):
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message' : 'updated data deceived', 'animals': filtered_animals, 'master_blocklist': self.adapter.persistent_data['master_blocklist'], 'seconds':self.adapter.seconds }),
+                      content=json.dumps({'state' : True, 'message' : 'updated data received', 'animals': filtered_animals, 'master_blocklist': self.adapter.persistent_data['master_blocklist'], 'seconds':self.adapter.seconds }),
                     )
                     
                 elif action == 'abort':

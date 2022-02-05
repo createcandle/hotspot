@@ -92,6 +92,8 @@ class HotspotAdapter(Adapter):
         self.running = True
         self.seconds = 70
         self.allow_launch = True
+        self.use_without_cable = False
+        self.cable_needed = False
         
         print("os.uname() = " + str(os.uname()))
 
@@ -115,11 +117,11 @@ class HotspotAdapter(Adapter):
         
         
         if os.path.isfile("/boot/nohotspot.txt"):
-            print("nohotspot file spotted on SD card, so hotspot addon will not launch.")
+            print("no hotspot file spotted on SD card, so hotspot addon will not launch.")
             return
         
         jump45 = os.path.join(self.user_profile['addonsDir'], self.addon_name, "jump45")
-        print("jump45 = " + str(jump45))
+        #print("jump45 = " + str(jump45))
         if os.path.isfile(jump45):
             self.seconds = 45
             
@@ -187,11 +189,13 @@ class HotspotAdapter(Adapter):
         
         self.mac = get_own_mac("wlan0")
         self.hostname = get_own_hostname()
-        print("self.hostname = " + str(self.hostname))
+        if self.DEBUG:
+            print("self.hostname = " + str(self.hostname))
         self.mac_zero = self.mac.replace(self.mac[len(self.mac)-1], '0')
 
-        print("mac = " + str(self.mac))
-        print("mac_zero = " + str(self.mac_zero))
+        if self.DEBUG:
+            print("mac = " + str(self.mac))
+            print("mac_zero = " + str(self.mac_zero))
         self.name_server = "87.118.100.175" # German Privacy Foundation
         self.country_code = "NL"
         self.hotspot_name = "Candle"
@@ -249,7 +253,8 @@ class HotspotAdapter(Adapter):
             print("Error loading config: " + str(ex))
             
         self.ssid = self.hotspot_name + " " + self.persistent_data['unique_id'] + "_nomap"
-        print("ssid = " + str(self.ssid))
+        if self.DEBUG:
+            print("ssid = " + str(self.ssid))
         
         
         filename = "/etc/resolv.conf"
@@ -261,34 +266,24 @@ class HotspotAdapter(Adapter):
             if line.startswith( "nameserver " ):
                 self.name_server = line.split(" ")[1]
                 self.name_server = self.name_server.replace("\n","")
-                print("name server: " + str(self.name_server))
+                if self.DEBUG:
+                    print("name server: " + str(self.name_server))
             
 
         #if self.DEBUG:
         #    print("self.persistent_data is now:")
         #    print(str(self.persistent_data))
 
-        
-        
-        
-        print("__")
-        print("TIMESERVER COMMAND")
-        hostapd_command = "sudo /usr/sbin/hostapd -B " + self.hostapd_conf_file_path
-        time_server_command = "sudo python3 " + self.time_server_file_path + " 192.168.12.1 123"
-        print(str( time_server_command ))
-        
-        kill(time_server_command)
-        if self.time_server:
-            print("starting time server")
-            self.time_server_process = subprocess.Popen(time_server_command.split(), stdout=subprocess.PIPE, 
-                                 stderr=subprocess.PIPE, universal_newlines=True, preexec_fn=os.setpgrp)
-            print("time server PID = " + str(self.time_server_process.pid))
-            self.time_server_pid = self.time_server_process.pid
-            self.child_pids.append(self.time_server_process.pid)
-            print("internal time server started")
-        
-        
 
+
+        # Connected via ethernet?
+        self.ethernet_state = shell('cat /sys/class/net/eth0/operstate')
+        if self.DEBUG:
+            print("ethernet_state: " + str(self.ethernet_state))
+        if 'down' in self.ethernet_state and self.use_without_cable == False:
+            if self.DEBUG:
+                print("No ethernet, and Hotspot may not run without an ethernet connection. Stopping.")
+            self.cable_needed = True    
 
         #
         # Create UI
@@ -316,16 +311,36 @@ class HotspotAdapter(Adapter):
         except Exception as ex:
             print("Could not create hotspot device:" + str(ex))
 
+
+        
+        # Only continue if there is an ethernet cable plugged in (unless the user has overridden this)
+        if self.cable_needed:
+            return
+        
+        
+        # starting time server
+        if self.DEBUG:
+            print("__")
+            print("TIMESERVER COMMAND")
+        hostapd_command = "sudo /usr/sbin/hostapd -B " + self.hostapd_conf_file_path
+        time_server_command = "sudo python3 " + self.time_server_file_path + " 192.168.12.1 123"
+        if self.DEBUG:
+            print(str( time_server_command ))
+        
+        kill(time_server_command)
+        if self.time_server:
+            if self.DEBUG:
+                print("starting time server")
+            self.time_server_process = subprocess.Popen(time_server_command.split(), stdout=subprocess.PIPE, 
+                                 stderr=subprocess.PIPE, universal_newlines=True, preexec_fn=os.setpgrp)
+            if self.DEBUG:
+                print("time server PID = " + str(self.time_server_process.pid))
+            self.time_server_pid = self.time_server_process.pid
+            self.child_pids.append(self.time_server_process.pid)
+            if self.DEBUG:
+                print("internal time server started")
         
 
-            
-        # Create notifier
-        try:
-            #self.voice_messages_queue = queue.Queue()
-            #self.notifier = HotspotNotifier(self,self.voice_messages_queue,verbose=True) # TODO: It could be nice to move speech completely to a queue system so that voice never overlaps.
-            pass
-        except:
-            print("Error creating notifier")
 
         # Start the internal clock which is used to handle timers. It also receives messages from the notifier.
         if self.DEBUG:
@@ -357,7 +372,8 @@ class HotspotAdapter(Adapter):
         #time.sleep(10)
         
         self.save_persistent_data()
-        print("end of init")
+        if self.DEBUG:
+            print("end of init")
 
         while self.running:
             time.sleep(1)
@@ -368,8 +384,9 @@ class HotspotAdapter(Adapter):
                 if self.allow_launch == True:
                     if self.seconds == 90:
                         if self.allow_launch == True:
-                            print("CLOCK -> 90sec -> start hotspot")
-                            self.start_hostapd() # it stops here
+                            if self.DEBUG:
+                                print("CLOCK -> 90sec -> start hotspot")
+                            self.start_hostapd() # it stops here, as this is blocking
                             
                             #self.d = threading.Thread(target=self.start_hostapd)
                             #self.d.daemon = True
@@ -418,6 +435,7 @@ class HotspotAdapter(Adapter):
             database = Database('hotspot')
             if not database.open():
                 print("Could not open settings database")
+                self.close_proxy()
                 return
             
             config = database.load_config()
@@ -425,6 +443,7 @@ class HotspotAdapter(Adapter):
             
         except:
             print("Error! Failed to open settings database.")
+            self.close_proxy()
         
         if not config:
             print("Error loading config from database")
@@ -481,6 +500,12 @@ class HotspotAdapter(Adapter):
         
 
 
+        if 'Use without a network cable' in config:
+            self.use_without_cable = bool(config['Use without a network cable']) 
+            if self.DEBUG:
+                print("-Use without a network cable preference was in config, and is now set to: " + str(self.use_without_cable))
+
+
         if 'Use blocklist' in config:
             self.use_blocklists = bool(config['Use blocklist']) 
             if self.DEBUG:
@@ -520,7 +545,8 @@ class HotspotAdapter(Adapter):
             self.update_network_info()
             self.previous_hostname = self.hostname
         except Exception as ex:
-            print("Error getting ip address: " + str(ex)) 
+            if self.DEBUG:
+                print("Error getting ip address: " + str(ex)) 
         
         
         
@@ -580,9 +606,10 @@ log-facility=-
         #dnsmasq_conf_string += "address=/" + self.hostname + ".local/192.168.12.1\n"
         #dnsmasq_conf_string += "address=/privacylabel.org/192.168.12.1\n"
 
-        print("")
-        print("___dnsmasq_conf_string___")
-        print(str(dnsmasq_conf_string))
+        if self.DEBUG:
+            print("")
+            print("___dnsmasq_conf_string___")
+            print(str(dnsmasq_conf_string))
         textfile = open(self.dnsmasq_conf_file_path, "w")
         a = textfile.write(dnsmasq_conf_string)
         textfile.close()
@@ -624,9 +651,10 @@ rsn_pairwise=CCMP"""
         
 
 
-        print("")
-        print("___hostapd_conf_string___")
-        print(str(hostapd_conf_string))
+        if self.DEBUG:
+            print("")
+            print("___hostapd_conf_string___")
+            print(str(hostapd_conf_string))
         textfile = open(self.hostapd_conf_file_path, "w")
         a = textfile.write(hostapd_conf_string)
         textfile.close()
@@ -655,9 +683,11 @@ rsn_pairwise=CCMP"""
             # check if uap0 has already been created (e.g. is the addon is restarted)  
             uap_check = shell("ifconfig | grep 'uap0'")
             if 'uap0' in uap_check:
-                print("Error: uap0 was already set up?")
+                if self.DEBUG:
+                    print("Error: uap0 was already set up?")
                 if not self.ethernet_connected:
-                    print("restarting the hotspot addon is only supported if a network cable is attached. To restart the hotspot, please reboot the entire controller.")
+                    if self.DEBUG:
+                        print("restarting the hotspot addon is only supported if a network cable is attached. To restart the hotspot, please reboot the entire controller.")
                     return
                 else:
                     os.system("sudo iw dev uap0 del")
@@ -667,8 +697,9 @@ rsn_pairwise=CCMP"""
             # ifconfig explanation:
             #http://litux.nl/Reference/books/7213/ddu0293.html
         
-            # dhcpcd needs to be down when the new interface is created, otherwise it will start wpa_supplicant for it, and that will create errors.
-            print("stopping dhcpcd")
+            # dhcpcd needs to be (temporarily) down when the new interface is created, otherwise it will start wpa_supplicant for it, and that will create errors.
+            if self.DEBUG:
+                print("stopping dhcpcd")
             os.system("sudo systemctl stop dhcpcd.service")
             os.system("sudo pkill dhcpcd")
             os.system("sudo systemctl stop wpa_supplicant.service")
@@ -681,23 +712,27 @@ rsn_pairwise=CCMP"""
             
             #os.system("sudo dhcpcd --denyinterfaces uap0 --nohook wpa_supplicant")
             #time.sleep(2)
-            print("adding uap0 interface")
+            if self.DEBUG:
+                print("adding uap0 interface")
             os.system("sudo /sbin/iw phy phy0 interface add uap0 type __ap")
             
         	#sudo /sbin/iw phy phy0 interface add candle type __ap
             time.sleep(.1)
-            print("setting mac")
+            if self.DEBUG:
+                print("setting mac")
             os.system("sudo ifconfig uap0 hw ether " + str(self.mac_zero))
             time.sleep(.1)
-            print("setting power save settings to off")
+            if self.DEBUG:
+                print("setting power save settings to off")
             os.system("sudo iw dev wlan0 set power_save off")
             os.system("sudo iw dev uap0 set power_save off")
 
-            print("adding iptables")
+            if self.DEBUG:
+                print("adding iptables")
 
     
-            print("replacing old broad gateway iptables rules with more precise ip-based ones")
-            print("- removing 2 mangle rules")
+                print("replacing old broad gateway iptables rules with more precise ip-based ones")
+                print("- removing 2 mangle rules")
             #os.system("sudo iptables -t mangle --flush")
             #os.system("sudo iptables -t nat --flush")
     
@@ -705,11 +740,13 @@ rsn_pairwise=CCMP"""
             os.system("sudo iptables -t mangle -D PREROUTING -p tcp --dport 443 -j MARK --set-mark 1")
          
     
-            print("- removing 2 'mark 0x1' input rules")
+            if self.DEBUG:
+                print("- removing 2 'mark 0x1' input rules")
             os.system("sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 8080 -m mark --mark 0x1 -j ACCEPT")
             os.system("sudo iptables -D INPUT -p tcp -m state --state NEW -m tcp --dport 4443 -m mark --mark 0x1 -j ACCEPT")
         
-            print("- removing 2 port changing prerouting rules")
+            if self.DEBUG:
+                print("- removing 2 port changing prerouting rules")
             os.system("sudo iptables -t nat -D PREROUTING -p tcp -m tcp --dport 80 -j REDIRECT --to-ports 8080")
             os.system("sudo iptables -t nat -D PREROUTING -p tcp -m tcp --dport 443 -j REDIRECT --to-ports 4443")
             #os.system("sudo iptables -t mangle -A PREROUTING -p tcp --dport 80 -d 192.168.12.1 -j MARK --set-mark 1")
@@ -722,34 +759,40 @@ rsn_pairwise=CCMP"""
             #os.system("iptables -t mangle -A PREROUTING -p tcp --dport 80 -d " + str(self.ip_address) + " -j MARK --set-mark 1")
             #os.system("iptables -t mangle -A PREROUTING -p tcp --dport 4443 -d " + str(self.ip_address) + " -j MARK --set-mark 1")
         
-        
+
         
             iptables_nat = shell("sudo iptables -t nat -S")
-            print("----- IP TABLES ----")
-            print(iptables_nat)
-            print("----- - ---- - -- --")
+            if self.DEBUG:
+                print("----- IP TABLES ----")
+                print(iptables_nat)
+                print("----- - ---- - -- --")
             if "-A PREROUTING -p tcp --dport 80 -d 192.168.12.1 -j REDIRECT --to-port 8080" not in iptables_nat:
         
                 # shift internal ip address of gateway to port 8080 and 4443
-                print("- addding ip-based port redirect for internal ip")
+                if self.DEBUG:
+                    print("- addding ip-based port redirect for internal ip")
                 os.system("sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -d 192.168.12.1 -j REDIRECT --to-port 8080")
                 os.system("sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -d 192.168.12.1 -j REDIRECT --to-port 4443")
     
                 # shift external ip address of gateway to ports 8080 and 4443
-                print("- addding ip-based port redirect for external ip")
+                if self.DEBUG:
+                    print("- addding ip-based port redirect for external ip")
                 os.system("sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -d " + str(self.ip_address) + " -j REDIRECT --to-port 8080")
                 os.system("sudo iptables -t nat -A PREROUTING -p tcp --dport 443 -d " + str(self.ip_address) + " -j REDIRECT --to-port 4443")
     
                 # sudo iptables -t mangle -A PREROUTING -p tcp --dport 80 -d 192.168.2.165 -j MARK --set-mark 1
-                print("finished replacing iptables to ports 8080 and 4443")
+                if self.DEBUG:
+                    print("finished replacing iptables to ports 8080 and 4443")
     
     
-                print("- addding uap0 <-> wlan0/eth0 traversal")
+                if self.DEBUG:
+                    print("- addding uap0 <-> wlan0/eth0 traversal")
                 os.system("sudo iptables -A FORWARD -d 192.168.12.0/24 -o uap0 -j ACCEPT")
                 os.system("sudo ip6tables -A FORWARD -d ff02::1 -o uap0 -j ACCEPT")
                 
 
-                print("- addding NAT")
+                if self.DEBUG:
+                    print("- addding NAT")
                 os.system("sudo iptables -t nat -A POSTROUTING -s 192.168.12.0/24 ! -d 192.168.12.0/24  -j MASQUERADE")
                 os.system("sudo ip6tables -t nat -A POSTROUTING -s ff02::1 ! -d ff02::1  -j MASQUERADE")
                 #os.system("sudo ip6tables -t nat -A POSTROUTING -s fd00::1 ! -d fd00::1  -j MASQUERADE")
@@ -804,7 +847,8 @@ rsn_pairwise=CCMP"""
                 
                 
                 if not self.name_server.startswith("192.168.12"):
-                    print("blocking access to gateway UI from uap0 network")
+                    if self.DEBUG:
+                        print("blocking access to gateway UI from uap0 network")
                     #os.system("sudo iptables -A FORWARD -d 192.168.2.2 -i uap0 -p udp --dport 53 -m iprange --src-range 192.168.12.2-192.168.12.255 -j ACCEPT")
                     #os.system("sudo iptables -A FORWARD -d 192.168.2.2  -p tcp -m tcp --dport 80 -j DROP")
                     #os.system("sudo iptables -A FORWARD -d 192.168.2.2  -p tcp -m tcp --dport 443 -j DROP")
@@ -822,7 +866,8 @@ rsn_pairwise=CCMP"""
                     
                     #os.system("sudo iptables -A FORWARD -i uap0 -d 192.168.2.2 -j DROP")
                 if self.time_server:
-                    print("routing to local NTP time server")
+                    if self.DEBUG:
+                        print("routing to local NTP time server")
                     os.system("sudo iptables -t nat -A PREROUTING -i uap0 -p udp --dport 123 -j DNAT --to-destination 192.168.12.1:123")
                     
                 #os.system("iptables -A OUTPUT -p icmp --icmp-type echo-request -j DROP")
@@ -842,32 +887,39 @@ rsn_pairwise=CCMP"""
             
             
             else:
-                print("NOT ADDING EXTRA IPTABLES RULES (ALREADY EXISTED?)")
+                if self.DEBUG:
+                    print("NOT ADDING EXTRA IPTABLES RULES (ALREADY EXISTED?)")
             
             #print("bringing uap0 up")
             #os.system("sudo ifconfig uap0 up") # simpler
             #time.sleep(2)
-            print(str(shell("ifconfig")))
+            if self.DEBUG:
+                print(str(shell("ifconfig")))
 
 
-            print("adding ip addresses to uap0 interface")
+            if self.DEBUG:
+                print("adding ip addresses to uap0 interface")
             
             # once the interface gains an IP, avahi will spring into action.
             os.system("sudo ifconfig uap0 192.168.12.1 netmask 255.255.255.0 broadcast 192.168.12.255") # simpler
             time.sleep(.1)
             kill("wpa_supplicant -B -c/etc/wpa_supplicant/wpa_supplicant.conf -iuap0")
             
-            print("__")
-            print("HOSTAPD COMMAND")
+            if self.DEBUG:
+                print("__")
+                print("HOSTAPD COMMAND")
             hostapd_command = "sudo /usr/sbin/hostapd -B " + self.hostapd_conf_file_path
-            print(str( hostapd_command ))
+            if self.DEBUG:
+                print(str( hostapd_command ))
             
             kill(hostapd_command)
         
-            print("starting hostapd")
+            if self.DEBUG:
+                print("starting hostapd")
             self.hostapd_process = subprocess.Popen(hostapd_command.split(), stdout=subprocess.PIPE, 
                                  stderr=subprocess.PIPE, universal_newlines=True, preexec_fn=os.setpgrp)
-            print("hostapd PID = " + str(self.hostapd_process.pid))
+            if self.DEBUG:
+                print("hostapd PID = " + str(self.hostapd_process.pid))
             self.hostapd_pid = self.hostapd_process.pid
             self.child_pids.append(self.hostapd_process.pid)
         
@@ -877,7 +929,8 @@ rsn_pairwise=CCMP"""
             dhcp_check = shell("sudo /sbin/dhcpcd -w --denyinterfaces uap0")
             print(str(dhcp_check))
             if dhcp_check == "":
-                print("starting dhcpcd with denyinterfaces for uap0")
+                if self.DEBUG:
+                    print("starting dhcpcd with denyinterfaces for uap0")
                 #print("removing old dhcpcd with denyinterfaces already in place")
                 #kill("sudo /sbin/dhcpcd -w --denyinterfaces uap0")
                 #time.sleep(1)
@@ -897,7 +950,8 @@ rsn_pairwise=CCMP"""
             
             kill("ps ax | grep 'sudo dnsmasq -k -d --interface=uap0'")
             
-            print("starting dnsmasq")
+            if self.DEBUG:
+                print("starting dnsmasq")
     
             hosts_part = ""
             if self.use_blocklists:
@@ -908,12 +962,14 @@ rsn_pairwise=CCMP"""
 
 
             while self.running:
-                print("__")
-                print("DNSMASQ COMMAND")
-                print(str( dnsmasq_command ))
+                if self.DEBUG:
+                    print("__")
+                    print("DNSMASQ COMMAND")
+                    print(str( dnsmasq_command ))
                 self.dnsmasq_process = subprocess.Popen(dnsmasq_command.split(), stdout=subprocess.PIPE, 
                                      stderr=subprocess.PIPE, universal_newlines=True, preexec_fn=os.setpgrp)
-                print("dnsmasq PID = " + str(self.dnsmasq_process.pid))
+                if self.DEBUG:
+                    print("dnsmasq PID = " + str(self.dnsmasq_process.pid))
                 self.dnsmasq_pid = self.dnsmasq_process.pid
                 self.child_pids.append( self.dnsmasq_process.pid )
 
@@ -939,7 +995,8 @@ rsn_pairwise=CCMP"""
                     time.sleep(.1)
                         
                         
-            print("BEYOND STARTING DNSMASQ")
+            if self.DEBUG:
+                print("BEYOND STARTING DNSMASQ")
             #print(str(shell("ifconfig")))
             
             #print("bringing uap0 up")
@@ -966,30 +1023,36 @@ rsn_pairwise=CCMP"""
 
     def parse_dnsmasq(self,line):
         line = line.replace("\n", "")
-        print("parsing: --" + str(line) + "--")
+        if self.DEBUG:
+            print("parsing: --" + str(line) + "--")
         if "available DHCP range:" in line:
-            print("new DHCP connection spotted")
+            if self.DEBUG:
+                print("new DHCP connection spotted")
             self.dnsmasq_data = ""
         self.dnsmasq_data += line + "\n"
         #print("self.dnsmasq_data is now: " + str(self.dnsmasq_data))
         if "next server:" in line:
-            print("end of new DHCP connection spotted")
+            if self.DEBUG:
+                print("end of new DHCP connection spotted")
             self.parse_dhcp()
             
         if "query[A" in line: # or "is <CNAME>" in line:
-            print("query[A spotted")
+            if self.DEBUG:
+                print("query[A spotted")
             
             ip = str(line.split(' ')[-1])
             if not valid_ip(ip):
                 return
             
             domain = str(line.split(' ')[-3])
-            print("spotted DNS query by: " + ip)
-            print("-it was asking for: " + domain)
+            if self.DEBUG:
+                print("spotted DNS query by: " + ip)
+                print("-it was asking for: " + domain)
             
             if ip in self.persistent_data['ip_to_mac']:
                 mac = self.persistent_data['ip_to_mac'][ip]
-                print("ip-to-mac gave: " + mac)
+                if self.DEBUG:
+                    print("ip-to-mac gave: " + mac)
                 if 'requests' not in self.persistent_data['animals'][mac]:
                     self.persistent_data['animals'][mac]['requests'] = []
                     
@@ -1005,7 +1068,8 @@ rsn_pairwise=CCMP"""
                 #    domain = domain.replace("www.","") # hosts file needs precise domains, so removing www might not be a great idea.
                 
                 if "." in domain:
-                    print("a domain spotted")
+                    if self.DEBUG:
+                        print("a domain spotted")
                     self.last_any_domain_countdown = self.domain_countdown_time
                     self.devices['hotspot'].properties['any'].update(True)
                     
@@ -1013,13 +1077,15 @@ rsn_pairwise=CCMP"""
                         self.persistent_data['animals'][mac]['domains'][domain] = {}
                         self.persistent_data['animals'][mac]['domains'][domain]['timestamps'] = []
                         self.last_new_domain_countdown = self.domain_countdown_time
-                        print("new domain spotted")
+                        if self.DEBUG:
+                            print("new domain spotted")
                         self.devices['hotspot'].properties['new'].update(True)
                         
                         if domain in self.persistent_data['master_blocklist']:
                             self.persistent_data['animals'][mac]['domains'][domain]['permission'] = 'blocked'
                             self.last_blocked_domain_countdown = self.domain_countdown_time
-                            print("new domain was in blocklist")
+                            if self.DEBUG:
+                                print("new domain was in blocklist")
                             self.devices['hotspot'].properties['blocked'].update(True)
                             
                         else:
@@ -1032,20 +1098,25 @@ rsn_pairwise=CCMP"""
                     self.persistent_data['animals'][mac]['domains'][domain]['timestamps'].append( time.time() )
                     
                 else:
-                    print("domain didn't have a . in it. Might be chrome spamming DNS..")
-                print("request added to list. It's length is now: " + str(len(self.persistent_data['animals'][mac]['domains'][domain]['timestamps'])))
+                    if self.DEBUG:
+                        print("domain didn't have a . in it. Might be chrome spamming DNS..")
+                if self.DEBUG:
+                    print("request added to list. It's length is now: " + str(len(self.persistent_data['animals'][mac]['domains'][domain]['timestamps'])))
             else:
-                print("whoa, got a request from a mysterious ip")
+                if self.DEBUG:
+                    print("whoa, got a request from a mysterious ip")
             
             
     def parse_dhcp(self):
-        print("in parse_dhcp")
+        if self.DEBUG:
+            print("in parse_dhcp")
         dhcp_lines = self.dnsmasq_data.splitlines()
         #print("dhcp_lines = " + str(dhcp_lines))
         #print("dhcp_lines length = " + str(len(dhcp_lines)))
         new_device = {}
         for line in dhcp_lines:
-            print("parsing dhcp line: " + str(line))
+            if self.DEBUG:
+                print("parsing dhcp line: " + str(line))
             if 'dnsmasq-dhcp' in line:
                 if "client provides name" in line:
                     print("-spotted client provides name")
@@ -1054,7 +1125,8 @@ rsn_pairwise=CCMP"""
                     potential_name = potential_name.replace('_'," ")
                     new_device['nicename'] = potential_name
                 elif "DHCPDISCOVER(uap0)" in line:
-                    print("-spotted DHCPDISCOVER")
+                    if self.DEBUG:
+                        print("-spotted DHCPDISCOVER")
                     potential_mac = extract_mac(line)
                     if valid_mac(potential_mac):
                         new_device['mac'] = potential_mac
@@ -1066,7 +1138,8 @@ rsn_pairwise=CCMP"""
                     potential_vendor = potential_vendor.replace(':'," ")
                     new_device['vendor'] = potential_vendor
                 elif "DHCPOFFER(uap0)" in line:
-                    print("-spotted DHCPOFFER")
+                    if self.DEBUG:
+                        print("-spotted DHCPOFFER")
                     potential_ip = extract_ip(line)
                     if valid_ip(potential_ip):
                         new_device['ip'] = potential_ip
@@ -1074,25 +1147,31 @@ rsn_pairwise=CCMP"""
                     potential_mac = extract_mac(line)
                     if valid_mac(potential_mac):
                         new_device['mac'] = potential_mac
-                    print("-should be an IP")
+                    if self.DEBUG:
+                        print("-should be an IP")
                     potential_ip = extract_ip(line)
-                    print("potential ip = " + str(potential_ip))
+                    if self.DEBUG:
+                        print("potential ip = " + str(potential_ip))
                     if valid_ip(potential_ip):
                         new_device['ip'] = potential_ip
                     else:
-                        print("ip was invalid?")
+                        if self.DEBUG:
+                            print("ip was invalid?")
                         
-        print("new device: " + str(new_device))
+        if self.DEBUG:
+            print("new device: " + str(new_device))
         
         if 'mac' in new_device and 'ip' in new_device:
         #if hasattr(new_device, 'mac') and hasattr(new_device, 'ip'):
             print("mac and IP were spotted OK")
         #if new_device['mac'] and new_device['ip']:
             if str(new_device['mac']) not in self.persistent_data['animals']:
-                print("new device, has mac, so adding it.")
+                if self.DEBUG:
+                    print("new device, has mac, so adding it.")
                 self.persistent_data['animals'][str(new_device['mac'])] = {}
             else:
-                print("This device was already in the persistent data. Updating the info.")
+                if self.DEBUG:
+                    print("This device was already in the persistent data. Updating the info.")
                 
             if not 'vendor' in new_device:
                 new_device['vendor'] = 'unknown'
@@ -1116,8 +1195,9 @@ rsn_pairwise=CCMP"""
         else:
             print("ERROR, no valid mac and ip detected?")
                 
-        print("")
-        print("animals updated")
+        if self.DEBUG:
+            print("")
+            print("animals updated")
         #print(str(self.persistent_data['animals']))
         self.save_persistent_data()
         self.dnsmasq_data = ""
@@ -1150,7 +1230,8 @@ rsn_pairwise=CCMP"""
 
 
     def update_dnsmasq(self):
-        print("in update dnsmasq")
+        if self.DEBUG:
+            print("in update dnsmasq")
         if self.dnsmasq_pid == None:
             print("no dnsmasq PID!")
             # https://serverfault.com/questions/723292/dnsmasq-doesnt-automatically-reload-when-entry-is-added-to-etc-hosts
@@ -1158,12 +1239,14 @@ rsn_pairwise=CCMP"""
         
         hosts_data = ""
         for domain in self.persistent_data['master_blocklist']:
-            print("master blocklist item: " + str(domain))
+            if self.DEBUG:
+                print("master blocklist item: " + str(domain))
             hosts_data += "0.0.0.0 " + domain + "\n"
         
         with open(self.master_blocklist_file_path, 'w') as f:
             f.write(hosts_data)
-            print("saved master_blocklist hosts file : " + str(self.master_blocklist_file_path))
+            if self.DEBUG:
+                print("saved master_blocklist hosts file : " + str(self.master_blocklist_file_path))
 
  
     def remove_thing(self, device_id):
@@ -1310,7 +1393,7 @@ rsn_pairwise=CCMP"""
 
 
 def shell(command):
-    print("SHELL COMMAND = " + str(command))
+    print("HOTSPOT SHELL COMMAND = " + str(command))
     shell_check = ""
     try:
         shell_check = subprocess.check_output(command, shell=True)

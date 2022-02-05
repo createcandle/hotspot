@@ -2,7 +2,7 @@
 	class Hotspot extends window.Extension {
 	    constructor() {
 	      	super('hotspot');
-			//console.log("Adding hotspot addon to menu");
+			console.log("Adding hotspot addon to menu");
       		
 			this.addMenuEntry('Candle Hotspot');
 			
@@ -16,6 +16,7 @@
             this.seconds = 0;
             this.aborted = false;
             this.launched = false;
+            this.cable_needed = false;
 
 			fetch(`/extensions/${this.id}/views/content.html`)
 	        .then((res) => res.text())
@@ -45,7 +46,7 @@
 		
 
 	    show() {
-			//console.log("hotspot show called");
+			console.log("hotspot show called");
 			//console.log("this.content:");
 			//console.log(this.content);
             
@@ -78,19 +79,58 @@
 
             //console.log("blocklist:");
             //console.log(blocklist);
-        
+            
+            
+            
+            
+	        window.API.postJson(
+	          `/extensions/hotspot/api/ajax`,
+				{'action':'init'}
 
+	        ).then((body) => {
 				
+                
+                // Cable needed?
+                if(typeof body.cable_needed !='undefined'){
+				    if(body.cable_needed){
+                        this.cable_needed = body.cable_needed;
+				        document.getElementById('extension-hotspot-cable-tip').classList.remove('extension-hotspot-hidden');
+				    }
+                    else{
+        				if(typeof body.ssid !='undefined'){
+        				    if(body.ssid){
+        				        document.getElementById('extension-hotspot-ssid').innerText = body.ssid;
+                                document.getElementById('extension-hotspot-ssid-container').classList.remove('extension-hotspot-hidden');
+        				    }
+        				}
+                    }
+                    
+				    if(body.debug){
+				        document.getElementById('extension-hotspot-debug-warning').classList.remove('extension-hotspot-hidden');
+                        document.getElementById('extension-hotspot-response').classList.remove('extension-hotspot-hidden');
+                        
+				    }
+                    
+				}
+                
+                
+	        }).catch((e) => {
+	  			//console.log("Error sending abort command: " + e.toString());
+				document.getElementById('extension-hotspot-abort-message').innerText = "Error sending abort command: " + e.toString();
+	        });
+
+
+
 			document.getElementById('extension-hotspot-refresh-button').addEventListener('click', (event) => {
 				//console.log("refresh button clicked");
 				this.get_latest();
 			});
+
+            
             
             // Abort button
 			document.getElementById('extension-hotspot-abort-button').addEventListener('click', (event) => {
 				//console.log("abort button clicked");
-				
-                
 		        window.API.postJson(
 		          `/extensions/hotspot/api/ajax`,
 					{'action':'abort'}
@@ -108,7 +148,8 @@
                 
 			});
 				
-                
+            
+            
             // Launch button
 			document.getElementById('extension-hotspot-launch-button').addEventListener('click', (event) => {
 				//console.log("launch button clicked");
@@ -137,77 +178,73 @@
             main_view.addEventListener('change', function(event) {
                 //console.log(event);
                 if (event.target.tagName.toLowerCase() === 'select') {
-                  //console.log("clicked on select. value: " + event.target.value);
-                  const target = event.target;
-                  
-  				window.API.postJson(
-  					`/extensions/hotspot/api/ajax`,
-  					{'action':'set_permission','domain':target.dataset.domain, 'permission':target.value, 'mac':target.dataset.mac}
-  				).then((body) => { 
-  					//console.log("update permission reaction: ");
-  					//console.log(body); 
-  					if( body['state'] != true ){
-  						pre.innerText = body['message'];
-  					}
+                    //console.log("clicked on select. value: " + event.target.value);
+                    const target = event.target;
+      				
+                    window.API.postJson(
+      					`/extensions/hotspot/api/ajax`,
+      					{'action':'set_permission','domain':target.dataset.domain, 'permission':target.value, 'mac':target.dataset.mac}
+      				).then((body) => { 
+      					//console.log("update permission reaction: ");
+      					//console.log(body); 
+      					if( body['state'] != true ){
+      						pre.innerText = body['message'];
+      					}
 
-  				}).catch((e) => {
-  					//console.log("hotspot: error in dropdown permissions handler");
-  					pre.innerText = e.toString();
-  				});
+      				}).catch((e) => {
+      					//console.log("hotspot: error in dropdown permissions handler");
+      					pre.innerText = e.toString();
+      				});
+  
                   
-              }
-              else if (event.target.tagName.toLowerCase() === 'option') {
-                  //console.log("clicked on option");
-              }
+                }
+                else if (event.target.tagName.toLowerCase() === 'option') {
+                    //console.log("clicked on option");
+                }
             });
                 
                 
                 
             // Listen for remove buttons clicks in blocklist
             blocklist.addEventListener('click', function(event) {
-              //console.log(event);
-              if (event.target.tagName.toLowerCase() === 'button') {
-                  //const classes = event.target.classList;
-                  //if( classes.indexOf("extension-hotspot-blocklist-remove-button") >= 0 ){
+                //console.log(event);
+                if (event.target.tagName.toLowerCase() === 'button') {
                       
-                  if( event.target.innerText == 'unblock'){
-                      //console.log("clicked on unblock button.");
+                    if( event.target.innerText == 'unblock'){
+                        //console.log("clicked on unblock button.");
                       
-                      const target = event.target;
+                        const target = event.target;
                   
-                      //console.log("removing: " + target.dataset.domain);
+                        //console.log("removing: " + target.dataset.domain);
                       
-        				window.API.postJson(
-        					`/extensions/hotspot/api/ajax`,
-        					{'action':'remove_from_master_blocklist','domain':target.dataset.domain}
-        				).then((body) => { 
-        					//console.log("remove from blocklist reaction: ");
-        					//console.log(body); 
-        					if( body['state'] != true ){
-        						pre.innerText = body['message'];
-                            }
-                            else{
-                                //console.log("should remove from list: " + target.dataset.domain);
-                                //this.get_latest();
+          				window.API.postJson(
+          					`/extensions/hotspot/api/ajax`,
+          					{'action':'remove_from_master_blocklist','domain':target.dataset.domain}
+          				).then((body) => { 
+          					//console.log("remove from blocklist reaction: ");
+          					//console.log(body); 
+          					if( body['state'] != true ){
+          						pre.innerText = body['message'];
+                              }
+                              else{
+                                  //console.log("should remove from list: " + target.dataset.domain);
+                                  //this.get_latest();
                                 
-                                const blocklist_children = document.getElementById("extension-hotspot-blocklist").children;
-                                for (var i = 0; i < blocklist_children.length; i++) {
-                                  var child = blocklist_children[i];
-                                  if( child.dataset.domain == target.dataset.domain ){
-                                      document.getElementById("extension-hotspot-blocklist").removeChild(child);
+                                  const blocklist_children = document.getElementById("extension-hotspot-blocklist").children;
+                                  for (var i = 0; i < blocklist_children.length; i++) {
+                                      var child = blocklist_children[i];
+                                      if( child.dataset.domain == target.dataset.domain ){
+                                          document.getElementById("extension-hotspot-blocklist").removeChild(child);
+                                      }    
                                   }
-                                }
-                            }
+                              }
 
-        				}).catch((e) => {
-        					//console.log("hotspot: error in remove from blocklist handler");
-        					pre.innerText = e.toString();
-        				});
-                  }
-                  
-                  
-                  
-              }
+          				}).catch((e) => {
+          					//console.log("hotspot: error in remove from blocklist handler");
+          					pre.innerText = e.toString();
+          				});
+                    }
+                }
             });
             
             
@@ -219,12 +256,12 @@
                 this.seconds++;
                 //console.log(this.seconds);
                 
-                if(this.seconds < 90 && this.aborted == false){
+                if(this.seconds < 90 && this.aborted == false && this.cable_needed == false){
                     document.getElementById('extension-hotspot-countdown-seconds').innerText = 90 - this.seconds;
-                    document.getElementById('extension-hotspot-countdown').classList = ['extension-hotspot-visible'];
+                    document.getElementById('extension-hotspot-countdown').classList.remove('extension-hotspot-hidden');
                 }
                 else{
-                    document.getElementById('extension-hotspot-countdown').classList = ['extension-hotspot-hidden'];
+                    document.getElementById('extension-hotspot-countdown').classList.add('extension-hotspot-hidden');
                     if(this.launched == false){
                         this.launched = true;
                         this.regenerate_items();
@@ -306,7 +343,9 @@
 				}
                 
 			}
-            catch(e){"Hotspot polling error: " + //console.log(e)}
+            catch(e){ 
+                console.log("Hotspot polling error: ", e);
+            }
             
         }
         
@@ -488,7 +527,7 @@
                             target_element.appendChild(a);
                         }
                         else if(info == 'protected'){
-                            clone.querySelectorAll( '.extension-hotspot-domains' )[0].innerHTML = '<p class="extension-hotspot-privacy-warning">This device has connected to so many domains that it may be a laptop or mobile phone. To safeguard privacy its connection log will not be shown.</p>';
+                            clone.querySelectorAll( '.extension-hotspot-domains' )[0].innerHTML = '<p class="extension-hotspot-privacy-warning">This device has connected to so many domains that it may be a laptop, tablet or mobile phone. To safeguard privacy its connection log will not be shown.</p>';
                             clone.querySelectorAll( '.extension-hotspot-item-clear-button' )[0].remove();
                             
                         }

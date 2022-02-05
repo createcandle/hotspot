@@ -2,8 +2,17 @@
   
     <div id="extension-hotspot-content-container">
         <h3 id="extension-hotspot-title">Hotspot</h3>
-		
-		<div id="extension-hotspot-countdown" class="extension-hotspot-hidden">
+		<div id="extension-hotspot-ssid-container" class="extension-hotspot-hidden extension-hotspot-centered-page">
+            <span>Connect your wifi devices to: </span><span id="extension-hotspot-ssid" title="adding nomap to the end of a wifi name will stop companies like Google from mapping its location when they drive their cars through cities">...</span>
+        </div>
+        
+        
+		<div id="extension-hotspot-cable-tip" class="extension-hotspot-hidden extension-hotspot-centered-info">
+			<h2 style="display: flex; align-items: center;"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNi45MzMgMTYuOTMzIiBoZWlnaHQ9IjY0IiB3aWR0aD0iNjQiPjxwYXRoIHN0eWxlPSJpc29sYXRpb246YXV0bzttaXgtYmxlbmQtbW9kZTpub3JtYWw7c29saWQtY29sb3I6IzAwMDtzb2xpZC1vcGFjaXR5OjEiIGQ9Ik0wIDEuNzV2MTMuNDMzaDE2LjkzM1YxLjc1em0yLjIzIDIuMzFoLjY3di4zNDZjMCAuMDk1LjAyMS4xNzEuMDQ4LjE3MWguNTNjLjAyNiAwIC4wNDgtLjA3Ni4wNDgtLjE3MVY0LjA2aC42ODd2LjM0NmMwIC4wOTUuMDIyLjE3MS4wNDkuMTcxaC41MjljLjAyNiAwIC4wNDgtLjA3Ni4wNDgtLjE3MVY0LjA2aC42ODh2LjM0NmMwIC4wOTUuMDIxLjE3MS4wNDguMTcxaC41MjljLjAyNyAwIC4wNDktLjA3Ni4wNDktLjE3MVY0LjA2aC42ODh2LjM0NmMwIC4wOTUuMDIuMTcxLjA0OC4xNzFoLjUyOGMuMDI3IDAgLjA0OS0uMDc2LjA0OS0uMTcxVjQuMDZoLjY4OHYuMzQ2YzAgLjA5NS4wMjEuMTcxLjA0OC4xNzFoLjUyOWMuMDI2IDAgLjA0OC0uMDc2LjA0OC0uMTcxVjQuMDZoLjY4OHYuMzQ2YzAgLjA5NS4wMjEuMTcxLjA0OC4xNzFoLjUzYy4wMjYgMCAuMDQ4LS4wNzYuMDQ4LS4xNzFWNC4wNmguNjg4di4zNDZjMCAuMDk1LjAyLjE3MS4wNDguMTcxaC41MjljLjAyNiAwIC4wNDgtLjA3Ni4wNDgtLjE3MVY0LjA2aC42ODh2LjM0NmMwIC4wOTUuMDIxLjE3MS4wNDguMTcxaC41MjljLjAyNyAwIC4wNDktLjA3Ni4wNDktLjE3MVY0LjA2aC42ODd2LjM0NmMwIC4wOTUuMDIyLjE3MS4wNDkuMTcxaC41MjhjLjAyNyAwIC4wNDktLjA3Ni4wNDktLjE3MVY0LjA2aC42N2MuNjMzIDAgMS4xNDMuNTEgMS4xNDMgMS4xNDJWOS43M2ExLjE0IDEuMTQgMCAwMS0xLjE0MyAxLjE0MmgtMy45OHYuODZhMS4xNCAxLjE0IDAgMDEtMS4xNDIgMS4xNDNoLTIuMjNhMS4xNCAxLjE0IDAgMDEtMS4xNDEtMS4xNDJ2LS44NkgyLjIzQTEuMTQgMS4xNCAwIDAxMS4wODcgOS43M1Y1LjIwMmMwLS42MzMuNTEtMS4xNDIgMS4xNDMtMS4xNDJ6IiBjb2xvcj0iIzAwMCIgb3ZlcmZsb3c9InZpc2libGUiIGZpbGw9IiNmZmYiLz48L3N2Zz4=" style="margin-right:2rem; width:4rem"> Is the network cable plugged in?</h2>
+            <p>It's best to run Hotspot only when connected via a network cable. Connecting to both your router and your devices over wifi can in some cases be a little unstable, for example if you own many smart devices. If you want to use Hotspot without a network cable plugged in, then you can enable this in the Hotspot addon's settings.</p>
+		</div>
+        
+		<div id="extension-hotspot-countdown" class="extension-hotspot-hidden extension-hotspot-centered-info">
 			<h2>The hotspot will launch in <span id="extension-hotspot-countdown-seconds">...</span> seconds.</h2>
             <p>If this addon is somehow causing issues, you can abort it starting (and/or disable it in your <a href="/settings/addons">addons overview</a>).</p>
 			<button id="extension-hotspot-abort-button" class="extension-hotspot-button">Abort launch</button> <button id="extension-hotspot-launch-button" class="extension-hotspot-button">Launch now</button> <span id="extension-hotspot-abort-message"></span>
@@ -77,7 +86,7 @@
 			<div id="extension-hotspot-tab-satellites" class="extension-hotspot-tab">
 				<div id="extension-hotspot-satellites" class="extension-hotspot-centered-page">
                     <h2>Blocklist</h2>
-					<p>These are all the domains that you have blocked so far.</p> 
+					<p>These are all the domains that your devices are not allowed to connect to.</p> 
 					
 					<div id="extension-hotspot-blocklist"></div>
 					
@@ -115,10 +124,17 @@
 		</div>
 		
 
+
         <br/>
         <br/>
 
-        <div id="extension-hotspot-response">
+        <div id="extension-hotspot-debug-warning" class="extension-hotspot-hidden">
+            <h2>Debugging is enabled</h2>
+            <p>This addon is currently set to save detailed information about its operation in the internal logs. This may impact your privacy, as this also means that insights into your behaviour might be stored in those logs.</p>
+            <p>You can disable debugging mode in this addon's settings page.</p>
+        </div>
+
+        <div id="extension-hotspot-response" class="extension-hotspot-hidden">
             <p id="extension-hotspot-response-data" class="extension-hotspot-centered-error"></p>
         </div>
         <br/>

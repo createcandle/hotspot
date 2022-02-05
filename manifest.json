@@ -29,7 +29,8 @@
 	  "Hotspot name":"Candle",
 	  "Hotspot password":"iloveprivacy",
 	  "Time server": true,
-	  "Multicast relay":false,
+	  "Use without a network cable": false,
+	  "Multicast relay": false,
 	  "Use blocklist": true,
       "Debugging": false
     },
@@ -48,15 +49,19 @@
           "type": "boolean"
         },
         "Time server": {
-          "description": "Your devices may want to incessantly ask for the time to various time servers, effectively revealing that your devices exist. If you enable this option, all those requests will be handled by this server intead, through some redirection.",
+          "description": "Your devices may want to incessantly ask for the time to various time servers, effectively revealing your IP address to those server. If you enable this option, all those requests will be handled by this server intead, through some redirection.",
+          "type": "boolean"
+        },
+        "Use without a network cable": {
+          "description": "It's recommended to only use the hotspot functionality while you have a network cable plugged in. Wirelessly connecting to both your router and your smart devices (effectively acting as a wifi repeater) is hard work, and is likely to be less reliable. But it is technically possible if you really want to try it.",
           "type": "boolean"
         },
         "Multicast relay": {
-          "description": "This is an feature for advanced users. If enabled there is some communication between your home network and the hotspot network.",
+          "description": "Advanced. Experimental. If enabled there is some communication between your home network and the hotspot network.",
           "type": "boolean"
         },
         "Debugging": {
-          "description": "Debugging allows you to diagnose any issues with the add-on. If enabled it will result in a lot more debug data in the internal log (which can be found under settings -> developer -> view internal logs).",
+          "description": "Advanced. Debugging allows developers to diagnose any issues with the add-on.",
           "type": "boolean"
         }
       },
@@ -68,7 +73,7 @@
     }
   },
   "short_name": "hotspot",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "web_accessible_resources": [
     "css/*.css",
     "images/*.svg",
