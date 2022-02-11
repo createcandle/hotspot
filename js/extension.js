@@ -88,7 +88,7 @@
 				{'action':'init'}
 
 	        ).then((body) => {
-				
+				console.log("Voco init response: ", body);
                 
                 // Cable needed?
                 if(typeof body.cable_needed !='undefined'){
@@ -118,8 +118,8 @@
                 
                 
 	        }).catch((e) => {
-	  			//console.log("Error sending abort command: " + e.toString());
-				document.getElementById('extension-hotspot-abort-message').innerText = "Error sending abort command: " + e.toString();
+	  			console.log("Error sending abort command: " + e.toString());
+				//document.getElementById('extension-hotspot-abort-message').innerText = "Error sending abort command: " + e.toString();
 	        });
 
 

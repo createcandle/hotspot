@@ -117,7 +117,7 @@ class HotspotAdapter(Adapter):
         
         
         if os.path.isfile("/boot/nohotspot.txt"):
-            print("no hotspot file spotted on SD card, so hotspot addon will not launch.")
+            print("nohotspot.txt file spotted on SD card, so hotspot addon will not launch.")
             return
         
         jump45 = os.path.join(self.user_profile['addonsDir'], self.addon_name, "jump45")

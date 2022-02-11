@@ -664,6 +664,18 @@
 }
 */
 
+#extension-hotspot-debug-warning{
+    max-width:80rem;
+    margin:2rem auto;
+    background-color:red;
+    color:white;
+    padding:2rem;
+}
+
+#extension-hotspot-response-data{
+    display:none;
+}
+
 
 @media screen and (min-width: 641px) {
 	.extension-hotspot-line2{
