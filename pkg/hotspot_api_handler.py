@@ -80,7 +80,7 @@ class HotspotAPIHandler(APIHandler):
         try:
         
             if request.method != 'POST':
-                print("- was bot a POST request, ignoring")
+                print("- was not a POST request, ignoring")
                 return APIResponse(status=404)
             
             if request.path == '/ajax':
