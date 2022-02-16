@@ -2,7 +2,7 @@
 	class Hotspot extends window.Extension {
 	    constructor() {
 	      	super('hotspot');
-			console.log("Adding hotspot addon to menu");
+			//console.log("Adding hotspot addon to menu");
       		
 			this.addMenuEntry('Candle Hotspot');
 			
@@ -46,7 +46,7 @@
 		
 
 	    show() {
-			console.log("hotspot show called");
+			//console.log("hotspot show called");
 			//console.log("this.content:");
 			//console.log(this.content);
             
@@ -88,7 +88,7 @@
 				{'action':'init'}
 
 	        ).then((body) => {
-				console.log("Voco init response: ", body);
+				//console.log("Hotspot init response: ", body);
                 
                 // Cable needed?
                 if(typeof body.cable_needed !='undefined'){
@@ -111,7 +111,7 @@
 				    if(body.debug){
 				        document.getElementById('extension-hotspot-debug-warning').classList.remove('extension-hotspot-hidden');
                         document.getElementById('extension-hotspot-response').classList.remove('extension-hotspot-hidden');
-                        
+                        console.log("Hotspot init response: ", body);
 				    }
                     
 				}
@@ -845,19 +845,11 @@
                         return parseInt(rating.innerText)
                       }
                     });
-                });
-                
-                
+                });       
                 
             }
-
-            
-            
-        }
-        
-        
-        
-        
+    
+        }        
         
 	}
 
