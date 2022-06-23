@@ -429,7 +429,8 @@ class HotspotAdapter(Adapter):
             if unblock_countdown < 1:
                 unblock_countdown = 20
                 
-                # it's strange that this is needed.. but it works.
+                # it's strange that this is needed.. but it works. Thanks to https://github.com/RaspAP/raspap-webgui/issues/200
+                
                 #/usr/sbin/rfkill list wifi | grep -q "Soft blocked: yes"
                 #wifi_block_result = shell('/usr/sbin/rfkill list wifi')
                 #if self.DEBUG:
