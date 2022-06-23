@@ -29,13 +29,6 @@ import subprocess
 from subprocess import call, Popen
 #from collections import namedtuple
 
-
-try:
-#    from .intentions import *
-#    print("succesfully imported intentions.py file")
-    pass
-except Exception as ex:
-    print("ERROR loading intentions.py: " + str(ex))
     
 from gateway_addon import Database, Adapter
 from .util import *
@@ -45,10 +38,10 @@ from .hotspot_device import *
 try:
     #from gateway_addon import APIHandler, APIResponse
     from .hotspot_api_handler import *
-    print("HotspotAPIHandler imported")
+    #print("HotspotAPIHandler imported")
     #pass
 except Exception as ex:
-    print("Unable to load HotspotAPIHandler (which is used for UI extention): " + str(ex))
+    print("Error, unable to load HotspotAPIHandler: " + str(ex))
 
 
 
@@ -72,9 +65,10 @@ class HotspotAdapter(Adapter):
         
         verbose -- whether or not to enable verbose logging
         """
-        print("Starting Hotspot addon")
+        #print("Starting Hotspot addon")
         #print(str( os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lib') ))
         self.pairing = False
+        self.running = False
         self.DEBUG = False
         self.DEV = False
         self.addon_name = 'hotspot'
@@ -88,18 +82,19 @@ class HotspotAdapter(Adapter):
         # Get initial audio_output options
         #self.audio_controls = get_audio_controls()
         #print("audio controls: " + str(self.audio_controls))
-
-        self.running = True
-        self.seconds = 70
+        time.sleep(2)
+        
+        self.seconds = 0
         self.allow_launch = True
         self.use_without_cable = False
         self.cable_needed = False
+        self.protected_animals_count = 0 # how many devices are not shown because they are likely a laptop or phone
         
-        print("os.uname() = " + str(os.uname()))
+        #print("os.uname() = " + str(os.uname()))
 
         # Some paths
-        print("self.user_profile:")
-        print(str(self.user_profile))
+        #print("self.user_profile:")
+        #print(str(self.user_profile))
         self.addon_path = os.path.join(self.user_profile['addonsDir'], self.addon_name)
         #self.dnsmasq_log_path = os.path.join(self.addon_path,"snips","response.wav")
         self.data_dir_path = os.path.join(self.user_profile['dataDir'], self.addon_name)
@@ -246,6 +241,20 @@ class HotspotAdapter(Adapter):
             print("Error fixing missing values in persistent data: " + str(ex))
         
         
+        #
+        # Create UI
+        #
+        # Even if the user doesn't want to see a UI, it may be the case that the HTML is still loaded somewhere. So the API should be available regardless.
+        
+        try:
+            self.api_handler = HotspotAPIHandler(self, verbose=True)
+            #self.manager_proxy.add_api_handler(self.api_handler)
+            if self.DEBUG:
+                print("Extension API handler initiated")
+        except Exception as e:
+            print("Failed to start API handler (this only works on gateway version 0.10 or higher). Error: " + str(e))
+            
+        
         # LOAD CONFIG
         try:
             self.add_from_config()
@@ -285,18 +294,7 @@ class HotspotAdapter(Adapter):
                 print("No ethernet, and Hotspot may not run without an ethernet connection. Stopping.")
             self.cable_needed = True    
 
-        #
-        # Create UI
-        #
-        # Even if the user doesn't want to see a UI, it may be the case that the HTML is still loaded somewhere. So the API should be available regardless.
         
-        try:
-            self.api_handler = HotspotAPIHandler(self, verbose=True)
-            #self.manager_proxy.add_api_handler(self.api_handler)
-            if self.DEBUG:
-                print("Extension API handler initiated")
-        except Exception as e:
-            print("Failed to start API handler (this only works on gateway version 0.10 or higher). Error: " + str(e))
 
         
         #time.sleep(1)
@@ -375,31 +373,38 @@ class HotspotAdapter(Adapter):
         if self.DEBUG:
             print("end of init")
 
+            
+        self.running = True
+
         while self.running:
             time.sleep(1)
-            self.seconds += 1
+            if self.allow_launch:
+                self.seconds += 1
             try:
                 if self.seconds < 91:
-                    print(self.seconds)
+                    if self.DEBUG:
+                        print(self.seconds)
                 if self.allow_launch == True:
                     if self.seconds == 90:
                         if self.allow_launch == True:
                             if self.DEBUG:
                                 print("CLOCK -> 90sec -> start hotspot")
-                            self.start_hostapd() # it stops here, as this is blocking
+                            #self.start_hostapd() # it stops here, as this is blocking
                             
-                            #self.d = threading.Thread(target=self.start_hostapd)
-                            #self.d.daemon = True
-                            #self.d.start()
+                            self.d = threading.Thread(target=self.start_hostapd)
+                            self.d.daemon = True
+                            self.d.start()
 
             except Exception as ex:
-                print("Error in dnsmasq loop: " + str(ex))
+                if self.DEBUG:
+                    print("Error in dnsmasq loop: " + str(ex))
                 
 
                 
                 
             
     def clock(self):
+        unblock_countdown = 20
         while self.running:
             time.sleep(1)
             
@@ -419,6 +424,23 @@ class HotspotAdapter(Adapter):
                 if self.last_blocked_domain_countdown == 0:
                     self.devices['hotspot'].properties['blocked'].update(False)
             
+            
+            unblock_countdown -= 1
+            if unblock_countdown < 1:
+                unblock_countdown = 20
+                
+                # it's strange that this is needed.. but it works.
+                #/usr/sbin/rfkill list wifi | grep -q "Soft blocked: yes"
+                #wifi_block_result = shell('/usr/sbin/rfkill list wifi')
+                #if self.DEBUG:
+                #    print("wifi_block_result: " + str(wifi_block_result))
+                #if "Soft blocked: yes" in wifi_block_result:
+                if self.DEBUG:
+                    print('periodic wifi unblocking')
+                os.system('/usr/sbin/rfkill block wifi;/usr/sbin/rfkill unblock wifi')
+                    
+                
+                
                 
                 
 #
@@ -435,7 +457,7 @@ class HotspotAdapter(Adapter):
             database = Database('hotspot')
             if not database.open():
                 print("Could not open settings database")
-                self.close_proxy()
+                #self.close_proxy()
                 return
             
             config = database.load_config()
@@ -443,7 +465,8 @@ class HotspotAdapter(Adapter):
             
         except:
             print("Error! Failed to open settings database.")
-            self.close_proxy()
+            #self.close_proxy()
+            return
         
         if not config:
             print("Error loading config from database")
@@ -549,6 +572,7 @@ class HotspotAdapter(Adapter):
                 print("Error getting ip address: " + str(ex)) 
         
         
+        self.send_pairing_prompt( "Creating Hotspot" )
         
 
         #
@@ -676,7 +700,7 @@ rsn_pairwise=CCMP"""
         try:
             
             # kill any potential left-overs
-            kill("multicast-relay.py --interfaces wlan0 uap0")
+            #kill("multicast-relay.py --interfaces wlan0 uap0")
             #kill("wpa_supplicant -B -c/etc/wpa_supplicant/wpa_supplicant.conf -iuap0")
             os.system("sudo pkill hostapd")
             
@@ -977,13 +1001,14 @@ rsn_pairwise=CCMP"""
                 sel = selectors.DefaultSelector()
                 sel.register(self.dnsmasq_process.stdout, selectors.EVENT_READ)
                 sel.register(self.dnsmasq_process.stderr, selectors.EVENT_READ)
-
+                
                 while self.running:
                     for key, val1 in sel.select():
                         line = key.fileobj.readline()
                         if not line:
+                            if self.DEBUG:
+                                print("dnsmasq loop: ok was false")
                             ok = False
-                            #print("dnsmasq loop: ok was false")
                             break
                         if key.fileobj is self.dnsmasq_process.stdout:
                             #if self.DEBUG:
@@ -992,7 +1017,7 @@ rsn_pairwise=CCMP"""
                         else:
                             #print(f"STDERR: {line}", end="", file=sys.stderr)
                             self.parse_dnsmasq(f"{line}")
-                    time.sleep(.1)
+                    time.sleep(.02)
                         
                         
             if self.DEBUG:
@@ -1295,13 +1320,14 @@ rsn_pairwise=CCMP"""
 #
 
     def unload(self):
-        print("Shutting down Hotspot. Wave!")
+        print("Shutting down Hotspot. Bye!")
         
         self.save_persistent_data()
         self.running = False
         
         for pid in self.child_pids:
-            print("- killing pid: " + str(pid))
+            if self.DEBUG:
+                print("- killing pid: " + str(pid))
             shell("sudo kill {}".format(pid))
         """
         if self.hostapd_pid != None:
@@ -1409,18 +1435,18 @@ def kill(command):
     check = ""
     try:
         search_command = "ps ax | grep \"" + command + "\" | grep -v grep"
-        print("in kill, search_command = " + str(search_command))
+        print("hotspot: in kill, search_command = " + str(search_command))
         check = shell(search_command)
-        print("check: " + str(check))
+        print("hotspot: check: " + str(check))
 
         if check != "":
-            print("Process was already running. Cleaning it up.")
+            print("hotspot: Process was already running. Cleaning it up.")
 
             old_pid = check.split(" ")[0]
-            print("- old PID: " + str(old_pid))
+            print("- hotspot: old PID: " + str(old_pid))
             if old_pid != None:
                 os.system("sudo kill " + old_pid)
-                print("- old process has been asked to stop")
+                print("- hotspot: old process has been asked to stop")
                 time.sleep(1)
         
 

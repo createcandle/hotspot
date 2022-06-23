@@ -6,6 +6,8 @@
       		
 			this.addMenuEntry('Candle Hotspot');
 			
+            this.interval = null;
+            
 			this.attempts = 0;
 
 	      	this.content = '';
@@ -24,24 +26,35 @@
 	         	this.content = text;
 	  		 	if( document.location.href.endsWith("hotspot") ){
 					//console.log(document.location.href);
-	  		  		this.show();
+                    setTimeout(() => {
+                        this.show();
+                    }, 3000);
+	  		  		
+                    
 	  		  	}
 	        })
 	        .catch((e) => console.error('Failed to fetch content:', e));
 	    }
 
 		
-
+		/*
+		hide(){
+			clearInterval(this.interval);
+			this.view.innerHTML = "";
+		}
+		*/
 		hide() {
 			//console.log("hotspot hide called");
 			try{
                 this.attempts = 0;
 				clearInterval(this.interval);
 				//console.log("interval cleared");
+                
 			}
 			catch(e){
 				//console.log("no interval to clear? " + e);
 			}
+            this.interval = null;
 		}
 		
 
@@ -64,13 +77,13 @@
 			
 			
 			if(this.content == ''){
+                //console.log("- show: empty content, aborting");
 				return;
 			}
 			else{
 				//document.getElementById('extension-hotspot-view')#extension-hotspot-view
 				main_view.innerHTML = this.content;
 			}
-			
 			
 			
 			const list = document.getElementById('extension-hotspot-list');
@@ -83,45 +96,11 @@
             
             
             
-	        window.API.postJson(
-	          `/extensions/hotspot/api/ajax`,
-				{'action':'init'}
-
-	        ).then((body) => {
-				//console.log("Hotspot init response: ", body);
-                
-                // Cable needed?
-                if(typeof body.cable_needed !='undefined'){
-				    if(body.cable_needed){
-                        this.cable_needed = body.cable_needed;
-				        document.getElementById('extension-hotspot-cable-tip').classList.remove('extension-hotspot-hidden');
-				    }
-                    else{
-        				if(typeof body.ssid !='undefined'){
-        				    if(body.ssid){
-        				        document.getElementById('extension-hotspot-ssid').innerText = body.ssid;
-                                document.getElementById('extension-hotspot-password').innerText = body.password;
-                                document.getElementById('extension-hotspot-ssid-container').classList.remove('extension-hotspot-hidden');
-        				    }
-                            
-                            
-        				}
-                    }
-                    
-				    if(body.debug){
-				        document.getElementById('extension-hotspot-debug-warning').classList.remove('extension-hotspot-hidden');
-                        document.getElementById('extension-hotspot-response').classList.remove('extension-hotspot-hidden');
-                        console.log("Hotspot init response: ", body);
-				    }
-                    
-				}
-                
-                
-	        }).catch((e) => {
-	  			console.log("Error sending abort command: " + e.toString());
-				//document.getElementById('extension-hotspot-abort-message').innerText = "Error sending abort command: " + e.toString();
-	        });
-
+            
+            
+            document.getElementById('extension-hotspot-title').addEventListener('click', (event) => {
+                this.get_init_data();
+            });
 
 
 			document.getElementById('extension-hotspot-refresh-button').addEventListener('click', (event) => {
@@ -253,27 +232,10 @@
             
 		
 		    
-			this.interval = setInterval(function(){
-				//this.get_latest();
-                
-                this.seconds++;
-                //console.log(this.seconds);
-                
-                if(this.seconds < 90 && this.aborted == false && this.cable_needed == false){
-                    document.getElementById('extension-hotspot-countdown-seconds').innerText = 90 - this.seconds;
-                    document.getElementById('extension-hotspot-countdown').classList.remove('extension-hotspot-hidden');
-                }
-                else{
-                    document.getElementById('extension-hotspot-countdown').classList.add('extension-hotspot-hidden');
-                    if(this.launched == false){
-                        this.launched = true;
-                        this.regenerate_items();
-                    }
-                }
-			}.bind(this), 1000);
+			
 			
             
-            this.get_latest();
+            
 
 
 			// TABS
@@ -289,19 +251,95 @@
 				document.getElementById('extension-hotspot-content').classList = ['extension-hotspot-show-tab-tutorial'];
 			});
 
-		}
+            
+            //console.log("evil");
+            this.get_init_data();
+           
+
+		} //  end of show()
 		
 	
-		/*
-		hide(){
-			clearInterval(this.interval);
-			this.view.innerHTML = "";
-		}
-		*/
+
+
+        get_init_data(){
+            //console.log("in get_init_data");
+            
+	        window.API.postJson(
+	          `/extensions/hotspot/api/ajax`,
+				{'action':'init'}
+
+	        ).then((body) => {
+				//console.log("hotspot init response: ", body);
+                
+                if(typeof body.debug !='undefined'){
+    			    if(body.debug){
+                        console.log("hotspot init response: ", body);
+    			        document.getElementById('extension-hotspot-debug-warning').classList.remove('extension-hotspot-hidden');
+                        document.getElementById('extension-hotspot-response').classList.remove('extension-hotspot-hidden');
+    			    }
+                }
+                
+                // Cable needed?
+                if(typeof body.cable_needed !='undefined'){
+				    if(body.cable_needed){
+                        this.cable_needed = body.cable_needed;
+				        document.getElementById('extension-hotspot-cable-tip').classList.remove('extension-hotspot-hidden');
+				    }
+                    else{
+        				if(typeof body.ssid !='undefined'){
+        				    if(body.ssid){
+        				        document.getElementById('extension-hotspot-ssid').innerText = body.ssid;
+                                document.getElementById('extension-hotspot-password').innerText = body.password;
+                                document.getElementById('extension-hotspot-ssid-container').classList.remove('extension-hotspot-hidden');
+        				    }
+        				}
+                    }
+                    
+				}
+                
+                // Get latest list
+                this.get_latest();
+                
+                if(this.interval == null){
+        			this.interval = setInterval(function(){
+        				//this.get_latest();
+                
+                        this.seconds++;
+                        //console.log(this.seconds);
+                
+                        if(this.seconds < 90 && this.aborted == false && this.cable_needed == false){
+                            document.getElementById('extension-hotspot-countdown-seconds').innerText = 90 - this.seconds;
+                            document.getElementById('extension-hotspot-countdown').classList.remove('extension-hotspot-hidden');
+                        }
+                        else{
+                            document.getElementById('extension-hotspot-countdown').classList.add('extension-hotspot-hidden');
+                            if(this.launched == false){
+                                this.launched = true;
+                                this.regenerate_items();
+                            }
+                        }
+        			}.bind(this), 1000);
+                }
+    			
+                
+                
+	        }).catch((e) => {
+	  			//console.log("Error sending abort command: " + e.toString());
+				document.getElementById('extension-hotspot-abort-message').innerText = "Hotspot: Error getting init data: " + e.toString();
+                console.log("Hotspot: Error getting init data: " + e.toString());
+                
+                // Get latest list
+                this.get_latest();
+	        });
+            
+            
+        }
+
+
         
         
         get_latest(){
-            //console.log("in get_latest");
+            //console.log("hotspot: in get_latest");
             const main_view = document.getElementById('extension-hotspot-view');
             const pre = document.getElementById('extension-hotspot-response-data');
 			
@@ -316,12 +354,16 @@
 					    {'action':'latest'}
 
 			        ).then((body) => {
-						//console.log("Python API /latest result:");
-						//console.log(body);
+						if(this.debug){
+                            console.log("Python API /latest result:");
+    						console.log(body);
+						}
+                        
 						this.attempts = 0;
                         
 						if(body['state'] == true){
 							this.animals = body['animals'];
+                            this.protected_animals_count = body['protected_animals_count'];
                             this.master_blocklist = body['master_blocklist'];
                             pre.innerText = body['message'];
                             this.seconds = body['seconds'];								
@@ -335,7 +377,7 @@
 						}
 
 			        }).catch((e) => {
-			  			//console.log("Error getting timer items: " + e.toString());
+			  			console.log("Error getting latest: " + e.toString());
 						//console.log(e);
 						pre.innerText = "Loading items failed - connection error";
 						this.attempts = 0;
@@ -801,6 +843,12 @@
                 
                 this.sort_items("count");
 			
+                if(this.protected_animals_count != 0){
+                    
+                    //document.getElementById('extension-hotspot-protected-animals-count').innerText = this.protected_animals_count;
+                    //document.getElementById('extension-hotspot-protected-animals-count-container').style.display = 'block';
+                }
+            
 			}
 			catch (e) {
 				// statements to handle any exceptions
@@ -845,11 +893,19 @@
                         return parseInt(rating.innerText)
                       }
                     });
-                });       
+                });
+                
+                
                 
             }
-    
-        }        
+
+            
+            
+        }
+        
+        
+        
+        
         
 	}
 

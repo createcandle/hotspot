@@ -60,7 +60,7 @@ class HotspotAPIHandler(APIHandler):
                 print("Created new API HANDLER: " + str(manifest['id']))
         
         except Exception as e:
-            print("Failed to init UX extension API handler: " + str(e))
+            print("Hotspot ApiHandler: Failed to init UX extension API handler: " + str(e))
 
         
         
@@ -80,52 +80,78 @@ class HotspotAPIHandler(APIHandler):
         try:
         
             if request.method != 'POST':
-                print("- was not a POST request, ignoring")
+                if self.DEBUG:
+                    print("- was POST request, ignoring")
                 return APIResponse(status=404)
             
             if request.path == '/ajax':
                 
                 action = str(request.body['action'])    
-                print("ajax action = " + str(action))
+                if self.DEBUG:
+                    print("ajax action = " + str(action))
+                
                 
                 if action == 'init':
-                    print('ajax handling init')
-                    print("self.adapter.persistent_data = " + str(self.adapter.persistent_data))
+                    if self.DEBUG:
+                        print('ajax handling init')
+                        print("self.adapter.persistent_data = " + str(self.adapter.persistent_data))
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message' : 'initialization complete', 'ssid':self.adapter.ssid, 'password':self.adapter.hotspot_password , 'cable_needed':self.adapter.cable_needed, 'debug': self.DEBUG}),
+                      content=json.dumps({'state' : True, 
+                                          'message':'initialization complete', 
+                                          'ssid':self.adapter.ssid, 
+                                          'password':self.adapter.hotspot_password, 
+                                          'cable_needed':self.adapter.cable_needed, 
+                                          'debug': self.DEBUG
+                                          }),
                     )
                     
+                
                 elif action == 'latest':
-                    print('ajax handling latest')
+                    if self.DEBUG:
+                        print('ajax handling latest')
                     #print("self.persistent_data = " + str(self.persistent_data))
                     filtered_animals = {}
                     try:
                         filtered_animals = self.filter_animals()
                     except:
-                        print("Error while filtering animals")
+                        if self.DEBUG:
+                            print("Error while filtering animals")
                     
-                    print("self.adapter.seconds = " + str(self.adapter.seconds))
+                    if self.DEBUG:
+                        print("self.adapter.seconds = " + str(self.adapter.seconds))
                     
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message' : 'updated data received', 'animals': filtered_animals, 'master_blocklist': self.adapter.persistent_data['master_blocklist'], 'seconds':self.adapter.seconds }),
+                      content=json.dumps({'state':True, 
+                                          'message':'updated data received', 
+                                          'animals':filtered_animals, 
+                                          'master_blocklist':self.adapter.persistent_data['master_blocklist'], 
+                                          'seconds':self.adapter.seconds,
+                                          'protected_animals_count':self.adapter.protected_animals_count
+                                          }),
                     )
                     
+                    
                 elif action == 'abort':
-                    print('ajax handling abort')
+                    if self.DEBUG:
+                        print('ajax handling abort')
                     #print("self.persistent_data = " + str(self.persistent_data))
                     self.adapter.allow_launch = False
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message' : 'launch has been aborted' }),
+                      content=json.dumps({'state':True, 
+                                          'message':'launch has been aborted' 
+                                          }),
                     )
                     
+                    
                 elif action == 'launch':
-                    print('ajax handling abort')
+                    if self.DEBUG:
+                        print('ajax handling abort')
                     #print("self.persistent_data = " + str(self.persistent_data))
                     self.adapter.allow_launch = True
                     self.adapter.seconds == 89
@@ -133,11 +159,15 @@ class HotspotAPIHandler(APIHandler):
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message' : 'launch has been aborted' }),
+                      content=json.dumps({'state' : True, 
+                                          'message':'launching...' 
+                                          }),
                     )
                     
+                    
                 elif action == 'delete' or action == 'clear':
-                    print('ajax handling delete')
+                    if self.DEBUG:
+                        print('ajax handling delete')
                     #print("self.persistent_data = " + str(self.persistent_data))
                     mac = str(request.body['mac'])
                     state = False
@@ -154,46 +184,53 @@ class HotspotAPIHandler(APIHandler):
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : state, 'message' : 'Connections record was reset' }),
+                      content=json.dumps({'state':state,
+                                          'message':'Connections record was reset'
+                                          }),
                     )
+                    
                     
                 elif action == 'set_permission':
                     mac = str(request.body['mac'])
                     domain = str(request.body['domain'])
                     permission = str(request.body['permission'])
-                    print("permission = " + permission)
-                    print("permission domain = " + domain)
-                    print("permission mac = " + mac)
+                    if self.DEBUG:
+                        print("permission = " + permission)
+                        print("permission domain = " + domain)
+                        print("permission mac = " + mac)
                     self.adapter.persistent_data['animals'][mac]['domains'][domain]['permission'] = permission
                     
                     if permission == 'allowed' and domain in self.adapter.persistent_data['master_blocklist']:
-                        print("- should remove domain from blocklist")
+                        if self.DEBUG:
+                            print("- should remove domain from blocklist")
                         self.adapter.persistent_data['master_blocklist'].remove(domain)
                         self.adapter.update_dnsmasq()
                         
                         if self.adapter.dnsmasq_pid != None:
-                            print("sending sighup to " + str(self.adapter.dnsmasq_pid))
+                            if self.DEBUG:
+                                print("sending sighup to " + str(self.adapter.dnsmasq_pid))
                             #os.kill(self.adapter.dnsmasq_pid, SIGHUP)
                             #os.system("sudo kill -SIGHUP " + str(self.adapter.dnsmasq_pid))
                             os.system("sudo kill -s HUP " + str(self.adapter.dnsmasq_pid))
                             # sudo kill -s HUP $pid
                         
                     if permission == 'blocked' and domain not in self.adapter.persistent_data['master_blocklist']:
-                        print("- should add domain to blocklist")
+                        if self.DEBUG:
+                            print("- should add domain to blocklist")
                         self.adapter.persistent_data['master_blocklist'].append(domain)
                         self.adapter.update_dnsmasq()
                         
-                    
                     self.adapter.save_persistent_data()
-                    
-
-                        
                     
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message': 'permission was changed', 'animals':self.adapter.persistent_data['animals'] }),
+                      content=json.dumps({'state':True, 
+                                          'message':'permission was changed',
+                                          'animals':self.adapter.persistent_data['animals']
+                                          }),
                     )
+                    
                     
                 elif action == 'remove_from_master_blocklist':
                     self.adapter.persistent_data['master_blocklist'].remove(request.body['domain'])
@@ -203,8 +240,11 @@ class HotspotAPIHandler(APIHandler):
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message': 'domain removed succesfully'}),
+                      content=json.dumps({'state':True, 
+                                          'message':'domain removed succesfully'
+                                          }),
                     )
+                    
                     
                 elif action == 'add_to_master_blocklist':
                     self.adapter.persistent_data['master_blocklist'].append(request.body['domain'])
@@ -214,8 +254,12 @@ class HotspotAPIHandler(APIHandler):
                     return APIResponse(
                       status=200,
                       content_type='application/json',
-                      content=json.dumps({'state' : True, 'message': 'settings saved succesfully'}),
+                      content=json.dumps({'state':True, 
+                                          'message':'settings saved succesfully'
+                                          }),
                     )
+                    
+                    
                 else:
                     return APIResponse(status=404)
                     
@@ -236,9 +280,6 @@ class HotspotAPIHandler(APIHandler):
     #              E.g. detect any normal computers and filter those out.
     #
     def filter_animals(self):
-        
-
-        
         #print("in filtering animals")
         #raw_animals = {}
         #animals_to_remove = []
@@ -251,22 +292,28 @@ class HotspotAPIHandler(APIHandler):
             #raw_animals = self.adapter.persistent_data['animals']
             #print("raw animals = " + str(raw_animals))
             #print("will loop over animals:")
+            skipped_count = 0
             for animal in new_animals.copy():
                 #print("animal: " + str(animal))
                 if 'domains' in new_animals[animal]:
                     animal_count = len(new_animals[animal]['domains'].keys())
                     #print("animal count = " + str(animal_count))
                     if animal_count > 30:
-                        print("removing device with a lot of domains for privacy reasons: " + str(animal))
+                        if self.DEBUG:
+                            print("removing device with a lot of domains for privacy reasons: " + str(animal))
                         #del new_animals[animal]['domains']
                         #del new_animals[animal]['requests']
                         new_animals[animal]['domains'] = {}
                         new_animals[animal]['requests'] = []
                         new_animals[animal]['protected'] = True
+                        skipped_count += 1
                     
+                        
+            self.adapter.protected_animals_count = skipped_count
         
         except Exception as ex:
-            print("Error while filtering out privacy sensitive data: " + str(ex))
+            if self.DEBUG:
+                print("Error while filtering out privacy sensitive data: " + str(ex))
             return {"error":"Error while doing privacy filtering: "  + str(ex) }
         
 

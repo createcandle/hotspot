@@ -41,6 +41,10 @@
 */
 
 
+
+
+
+
 .extension-hotspot-visible{
    display:block;
 }
@@ -63,7 +67,16 @@
     background-color:rgba(0,0,0,.3);
 }
 
-
+#extension-hotspot-view {
+  	height: 100vh; /*calc(100% - 7.6rem);*/
+  	box-sizing: border-box;
+	overflow: auto;
+	/*position: absolute;
+	top: 7.6rem;
+	left: 0;*/
+	padding: 2rem;
+    overflow:auto;
+}
 
 #extension-hotspot-view button{
 	font-size: 1.6rem;
@@ -82,6 +95,27 @@
 .extension-hotspot-italic{
 	font-style:italic;
 }
+
+
+#extension-hotspot-content {
+	display:flex;
+	flex-direction: column;
+	overflow: auto;
+  	position: relative;
+  	text-align: left;
+  	font-size: 1.6rem;
+  	color: #fff;
+	height:auto;
+    max-width:80rem;
+    margin: 0 auto;
+    
+}
+
+#extension-hotspot-content img{
+	max-width:100%;
+}
+
+
 
 
 /*  DELETE  */
@@ -111,7 +145,7 @@
 .extension-hotspot-item{
 	padding: 0;
 	display: flex;
-	background-color: rgba(0,0,0,.2);
+	background-color: #46769C;
 	border-radius:.5rem;
 	margin-top:1rem;
 	border-radius: .5rem;
@@ -183,6 +217,7 @@
 	width:auto;
 	display:flex;
 	flex-wrap:wrap;
+    margin-bottom:2rem;
 }
 
 
@@ -217,32 +252,6 @@
   	background-image: url('../images/menu-icon.svg');
 }
 
-#extension-hotspot-view {
-  	height: 100%; /*calc(100% - 7.6rem);*/
-  	box-sizing: border-box;
-	overflow: auto;
-	position: absolute;
-	top: 7.6rem;
-	left: 0;
-	padding: 2rem;
-}
-
-
-#extension-hotspot-content {
-	display:flex;
-	flex-direction: column;
-	flex-direction: column;
-	overflow: auto;
-  	position: relative;
-  	text-align: left;
-  	font-size: 1.6rem;
-  	color: #fff;
-	height:auto;
-}
-
-#extension-hotspot-content img{
-	max-width:100%;
-}
 
 .extension-hotspot-response-data{
 	text-align:center;
@@ -324,16 +333,18 @@
 }
 
 
-
+#extension-hotspot-protected-animals-count-container,
 .extension-hotspot-centered-info,
 .extension-hotspot-centered-error,
 .extension-hotspot-centered-page{
 	padding:2rem;
-	max-width:60rem;
-	margin: 4rem auto;
+	max-width:80rem;
+	margin: 6rem auto;
     line-height: 2.5rem;
+    border-radius:.5rem;
 }
 
+#extension-hotspot-protected-animals-count-container,
 #extension-hotspot-ssid-container,
 .extension-hotspot-centered-error{
 	text-align:center;
@@ -596,6 +607,7 @@
     display:flex;
     justify-content:space-between;
     align-items:center;
+    margin-left:auto;
 }
 
 
@@ -614,6 +626,7 @@
     padding:1rem;
     font-style:italic;
     margin-top:0;
+    line-height:2.2rem;
 }
 
 
@@ -664,18 +677,6 @@
 }
 */
 
-#extension-hotspot-debug-warning{
-    max-width:80rem;
-    margin:2rem auto;
-    background-color:red;
-    color:white;
-    padding:2rem;
-}
-
-#extension-hotspot-response-data{
-    display:none;
-}
-
 
 @media screen and (min-width: 641px) {
 	.extension-hotspot-line2{
@@ -696,6 +697,7 @@
 
 
 @media screen and (min-width: 1025px) {
+    /*
 	#extension-hotspot-view{
 		left:9.6rem;
 		top: 0;
@@ -704,7 +706,7 @@
 		width: calc(100% - 9.6rem);
 		padding-right:9.6rem;
 	}
-	
+	*/
 	#extension-hotspot-content-container{
 		height:auto;
 		width: calc(100% - 3rem);
