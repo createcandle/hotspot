@@ -309,6 +309,10 @@
 /*  blocklist  */
 
 
+#extension-hotspot-satellites{
+    background-color:rgba(0,0,0,.1);
+}
+
 #extension-hotspot-blocklist{
     
 }
