@@ -404,6 +404,9 @@ class HotspotAdapter(Adapter):
                 
             
     def clock(self):
+        if self.DEBUG:
+            print("starting clock")
+            
         unblock_countdown = 20
         while self.running:
             time.sleep(1)
@@ -424,7 +427,9 @@ class HotspotAdapter(Adapter):
                 if self.last_blocked_domain_countdown == 0:
                     self.devices['hotspot'].properties['blocked'].update(False)
             
-            
+            if self.DEBUG:
+                print("unblock_countdown: " + str(unblock_countdown))
+                
             unblock_countdown -= 1
             if unblock_countdown < 1:
                 unblock_countdown = 20
