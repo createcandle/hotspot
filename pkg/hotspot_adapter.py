@@ -68,7 +68,8 @@ class HotspotAdapter(Adapter):
         #print("Starting Hotspot addon")
         #print(str( os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lib') ))
         self.pairing = False
-        self.running = False
+        self.ready = False
+        self.running = True
         self.DEBUG = False
         self.DEV = False
         self.addon_name = 'hotspot'
@@ -374,7 +375,7 @@ class HotspotAdapter(Adapter):
             print("end of init")
 
             
-        self.running = True
+        self.ready = True
 
         while self.running:
             time.sleep(1)
@@ -427,8 +428,8 @@ class HotspotAdapter(Adapter):
                 if self.last_blocked_domain_countdown == 0:
                     self.devices['hotspot'].properties['blocked'].update(False)
             
-            if self.DEBUG:
-                print("unblock_countdown: " + str(unblock_countdown))
+            #if self.DEBUG:
+            #    print("unblock_countdown: " + str(unblock_countdown))
                 
             unblock_countdown -= 1
             if unblock_countdown < 1:
@@ -441,11 +442,12 @@ class HotspotAdapter(Adapter):
                 #if self.DEBUG:
                 #    print("wifi_block_result: " + str(wifi_block_result))
                 #if "Soft blocked: yes" in wifi_block_result:
-                if self.DEBUG:
-                    print('periodic wifi unblocking')
+                #if self.DEBUG:
+                #    print('periodic wifi unblocking')
                 os.system('/usr/sbin/rfkill block wifi;/usr/sbin/rfkill unblock wifi')
                     
-                
+        if self.DEBUG:
+            print("hotspot clock stopped")         
                 
                 
                 
@@ -1326,7 +1328,8 @@ rsn_pairwise=CCMP"""
 #
 
     def unload(self):
-        print("Shutting down Hotspot. Bye!")
+        if self.DEBUG:
+            print("Shutting down Hotspot. Bye!")
         
         self.save_persistent_data()
         self.running = False
