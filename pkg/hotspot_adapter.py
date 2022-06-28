@@ -87,6 +87,7 @@ class HotspotAdapter(Adapter):
         
         self.seconds = 0
         self.allow_launch = True
+        self.launched = False
         self.use_without_cable = False
         self.cable_needed = False
         self.protected_animals_count = 0 # how many devices are not shown because they are likely a laptop or phone
@@ -377,6 +378,11 @@ class HotspotAdapter(Adapter):
             
         self.ready = True
 
+        #if self.allow_launch:
+            #if self.DEBUG:
+            #    print("disabling wifi power saving")
+            #os.system("sudo iw dev wlan0 set power_save off")
+
         while self.running:
             time.sleep(1)
             if self.allow_launch:
@@ -390,11 +396,11 @@ class HotspotAdapter(Adapter):
                         if self.allow_launch == True:
                             if self.DEBUG:
                                 print("CLOCK -> 90sec -> start hotspot")
-                            #self.start_hostapd() # it stops here, as this is blocking
+                            self.start_hostapd() # it stops here, as this is blocking
                             
-                            self.d = threading.Thread(target=self.start_hostapd)
-                            self.d.daemon = True
-                            self.d.start()
+                            #self.d = threading.Thread(target=self.start_hostapd)
+                            #self.d.daemon = True
+                            #self.d.start()
 
             except Exception as ex:
                 if self.DEBUG:
@@ -408,7 +414,7 @@ class HotspotAdapter(Adapter):
         if self.DEBUG:
             print("starting clock")
             
-        unblock_countdown = 20
+        unblock_countdown = 30
         while self.running:
             time.sleep(1)
             
@@ -433,8 +439,8 @@ class HotspotAdapter(Adapter):
                 
             unblock_countdown -= 1
             if unblock_countdown < 1:
-                unblock_countdown = 20
-                
+                unblock_countdown = 30
+                os.system('sudo pkill wpa_supplicant')
                 # it's strange that this is needed.. but it works. Thanks to https://github.com/RaspAP/raspap-webgui/issues/200
                 
                 #/usr/sbin/rfkill list wifi | grep -q "Soft blocked: yes"
@@ -444,7 +450,8 @@ class HotspotAdapter(Adapter):
                 #if "Soft blocked: yes" in wifi_block_result:
                 #if self.DEBUG:
                 #    print('periodic wifi unblocking')
-                os.system('/usr/sbin/rfkill block wifi;/usr/sbin/rfkill unblock wifi')
+                #os.system('/usr/sbin/rfkill block wifi;/usr/sbin/rfkill unblock wifi')
+                #os.system('/usr/sbin/rfkill unblock wifi')
                     
         if self.DEBUG:
             print("hotspot clock stopped")         
@@ -733,14 +740,18 @@ rsn_pairwise=CCMP"""
             if self.DEBUG:
                 print("stopping dhcpcd")
             os.system("sudo systemctl stop dhcpcd.service")
+            time.sleep(.5)
             os.system("sudo pkill dhcpcd")
             os.system("sudo systemctl stop wpa_supplicant.service")
             kill("wpa_supplicant -B -c/etc/wpa_supplicant/wpa_supplicant.conf -iuap0")
-            #os.system("sudo wpa_cli terminate")
+            os.system("sudo pkill wpa_supplicant")
+            os.system("sudo wpa_cli terminate")
             kill("/sbin/wpa_supplicant -u -s -O /run/wpa_supplicant")
             #os.system("sudo pkill wpa_supplicant")
             time.sleep(.1)
-            os.system("sudo rfkill unblock 0")
+            #os.system("sudo rfkill unblock 0")
+            os.system("sudo rfkill unblock wifi")
+            
             
             #os.system("sudo dhcpcd --denyinterfaces uap0 --nohook wpa_supplicant")
             #time.sleep(2)
@@ -756,13 +767,12 @@ rsn_pairwise=CCMP"""
             time.sleep(.1)
             if self.DEBUG:
                 print("setting power save settings to off")
-            os.system("sudo iw dev wlan0 set power_save off")
+            #os.system("sudo iw dev wlan0 set power_save off")
+            os.system("sudo ip link set dev wlan0 down") # https://raspberrypi.stackexchange.com/questions/85599/how-to-start-stop-wpa-supplicant-on-default-raspbian
             os.system("sudo iw dev uap0 set power_save off")
 
             if self.DEBUG:
                 print("adding iptables")
-
-    
                 print("replacing old broad gateway iptables rules with more precise ip-based ones")
                 print("- removing 2 mangle rules")
             #os.system("sudo iptables -t mangle --flush")
@@ -967,18 +977,25 @@ rsn_pairwise=CCMP"""
                 #kill("sudo /sbin/dhcpcd -w --denyinterfaces uap0")
                 #time.sleep(1)
                 os.system("sudo /sbin/dhcpcd -w --denyinterfaces uap0") # --nohook wpa_supplicant")
-                time.sleep(3)
+            
+            time.sleep(3)
             
             
-            
+            # dhcpsd restarts wpa_supplicant.. so it must be stopped again
             kill("wpa_supplicant -B -c/etc/wpa_supplicant/wpa_supplicant.conf -iuap0")
             
             #print("starting multicast relay")
             #os.system("python3 multicast-relay.py --homebrewNetifaces --ifNameStructLen 32 --interfaces wlan0 uap0")
+            
+            """
             if self.use_multicast_relay:
                 if self.DEBUG:
                     print("starting multicast relay")
                 os.system("python3 " + self.multicast_relay_file_path + " --interfaces wlan0 uap0")
+            else:
+                if self.DEBUG:
+                    print("NOT starting multicast relay")
+            """
             
             kill("ps ax | grep 'sudo dnsmasq -k -d --interface=uap0'")
             
@@ -992,6 +1009,8 @@ rsn_pairwise=CCMP"""
             dnsmasq_command = "sudo dnsmasq -k -d --interface=uap0 --no-daemon --log-async --conf-file=" + str(self.dnsmasq_conf_file_path) + hosts_part #  --no-hosts
             # sudo dnsmasq -k -d --interface=uap0 --no-daemon --log-async --conf-file=/home/pi/.webthings/data/hotspot/dnsmasq.conf --hostsdir=/home/pi/.webthings/data/hotspot/hosts
 
+
+            self.launched = True
 
             while self.running:
                 if self.DEBUG:
@@ -1164,7 +1183,8 @@ rsn_pairwise=CCMP"""
                     if valid_mac(potential_mac):
                         new_device['mac'] = potential_mac
                 elif "vendor class:" in line:
-                    print("-spotted vendorclass")
+                    if self.DEBUG:
+                        print("-spotted vendorclass")
                     potential_vendor = str(line.split(' ')[-1])
                     potential_vendor = potential_vendor.replace('-'," ")
                     potential_vendor = potential_vendor.replace('_'," ")
@@ -1196,7 +1216,8 @@ rsn_pairwise=CCMP"""
         
         if 'mac' in new_device and 'ip' in new_device:
         #if hasattr(new_device, 'mac') and hasattr(new_device, 'ip'):
-            print("mac and IP were spotted OK")
+            if self.DEBUG:
+                print("mac and IP were spotted OK")
         #if new_device['mac'] and new_device['ip']:
             if str(new_device['mac']) not in self.persistent_data['animals']:
                 if self.DEBUG:
@@ -1207,9 +1228,9 @@ rsn_pairwise=CCMP"""
                     print("This device was already in the persistent data. Updating the info.")
                 
             if not 'vendor' in new_device:
-                new_device['vendor'] = 'unknown'
+                new_device['vendor'] = 'Unnamed'
             if not 'nicename' in new_device:
-                new_device['nicename'] = 'unknown'
+                new_device['nicename'] = 'Unnamed'
                 
             if not 'animals' in self.persistent_data:
                 self.persistent_data['animals'] = {}
@@ -1226,7 +1247,8 @@ rsn_pairwise=CCMP"""
             new_ip = new_device['ip']
             self.persistent_data['ip_to_mac'][new_ip] = new_device['mac']
         else:
-            print("ERROR, no valid mac and ip detected?")
+            if self.DEBUG:
+                print("ERROR, no valid mac and ip detected?")
                 
         if self.DEBUG:
             print("")
@@ -1354,17 +1376,19 @@ rsn_pairwise=CCMP"""
             # it IS simple to kill based on command string:
             # pkill -f "ping google.com"
         """
+           
+        if self.launched: 
+            # remove uap0 interface
+            os.system("sudo iw dev uap0 del")
+            os.system("sudo ip link set dev wlan0 up")
+        
+            #disable transporting packets internally
+            os.system("sudo sysctl -w net.ipv4.ip_forward=0")
             
-        # remove uap0 interface
-        os.system("sudo iw dev uap0 del")
-        
-        #disable transporting packets internally
-        os.system("sudo sysctl -w net.ipv4.ip_forward=0")
-        
-        # restore services
-        os.system("sudo systemctl start wpa_supplicant.service")
-        os.system("sudo systemctl start dhcpcd.service")
-        #os.system("sudo pkill dhcpcd")
+            # restore services
+            os.system("sudo systemctl start wpa_supplicant.service")
+            os.system("sudo systemctl start dhcpcd.service")
+            #os.system("sudo pkill dhcpcd")
         
 
 #
@@ -1394,8 +1418,9 @@ rsn_pairwise=CCMP"""
                 return True
 
         except Exception as ex:
-            print("Error: could not store data in persistent store: " + str(ex) )
-            print(str(self.persistent_data))
+            if self.DEBUG:
+                print("Error: could not store data in persistent store: " + str(ex) )
+                print(str(self.persistent_data))
             return False
 
 
@@ -1428,7 +1453,7 @@ rsn_pairwise=CCMP"""
 
 
 def shell(command):
-    print("HOTSPOT SHELL COMMAND = " + str(command))
+    #print("HOTSPOT SHELL COMMAND = " + str(command))
     shell_check = ""
     try:
         shell_check = subprocess.check_output(command, shell=True)
@@ -1444,18 +1469,18 @@ def kill(command):
     check = ""
     try:
         search_command = "ps ax | grep \"" + command + "\" | grep -v grep"
-        print("hotspot: in kill, search_command = " + str(search_command))
+        #print("hotspot: in kill, search_command = " + str(search_command))
         check = shell(search_command)
-        print("hotspot: check: " + str(check))
+        #print("hotspot: check: " + str(check))
 
         if check != "":
-            print("hotspot: Process was already running. Cleaning it up.")
+            #print("hotspot: Process was already running. Cleaning it up.")
 
             old_pid = check.split(" ")[0]
-            print("- hotspot: old PID: " + str(old_pid))
+            #print("- hotspot: old PID: " + str(old_pid))
             if old_pid != None:
                 os.system("sudo kill " + old_pid)
-                print("- hotspot: old process has been asked to stop")
+                #print("- hotspot: old process has been asked to stop")
                 time.sleep(1)
         
 

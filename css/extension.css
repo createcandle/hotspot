@@ -399,6 +399,13 @@
     display:none;
 }
 
+.extension-hotspot-ip-link{
+    text-decoration:none;
+}
+.developer .extension-hotspot-ip-link{
+    text-decoration:underline;
+}
+
 .extension-hotspot-radio-select-item{
 	width:100%;
 	display:block;
@@ -463,34 +470,7 @@
 	flex-shrink: 0;
 }
 
-.extension-hotspot-type-timer .extension-hotspot-icon{
-	background-image:url('../images/timer.svg');
-}
-
-.extension-hotspot-type-alarm .extension-hotspot-icon{
-	background-image:url('../images/alarm.svg');
-}
-
-.extension-hotspot-type-wake .extension-hotspot-icon{
-	background-image:url('../images/wake.svg');
-}
-
-.extension-hotspot-type-reminder .extension-hotspot-icon{
-	background-image:url('../images/reminder.svg');
-}
-
-.extension-hotspot-type-countdown .extension-hotspot-icon{
-	background-image:url('../images/countdown.svg');
-}
-
-.extension-hotspot-type-actuator .extension-hotspot-icon{
-	background-image:url('../images/actuator.svg');
-}
-
-.extension-hotspot-type-value .extension-hotspot-icon{
-	background-image:url('../images/value.svg');
-}
-
+/*
 .extension-hotspot-month:after{
 	content:' ';
 }
@@ -538,7 +518,7 @@
 
 .extension-hotspot-to-go{
 }
-
+*/
 
 
 

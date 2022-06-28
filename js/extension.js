@@ -4,6 +4,8 @@
 	      	super('hotspot');
 			//console.log("Adding hotspot addon to menu");
       		
+            this.debug = false;
+            
 			this.addMenuEntry('Candle Hotspot');
 			
             this.interval = null;
@@ -94,7 +96,9 @@
             //console.log(blocklist);
             
             
-            
+            document.getElementById('extension-hotspot-retry-init-button').addEventListener('click', (event) => {
+                this.get_init_data();
+            });
             
             
             
@@ -272,6 +276,7 @@
 				//console.log("hotspot init response: ", body);
                 
                 if(typeof body.debug !='undefined'){
+                    this.debug = body.debug;
     			    if(body.debug){
                         console.log("hotspot init response: ", body);
     			        document.getElementById('extension-hotspot-debug-warning').classList.remove('extension-hotspot-hidden');
@@ -291,35 +296,45 @@
         				        document.getElementById('extension-hotspot-ssid').innerText = body.ssid;
                                 document.getElementById('extension-hotspot-password').innerText = body.password;
                                 document.getElementById('extension-hotspot-ssid-container').classList.remove('extension-hotspot-hidden');
+                                if(body.password == 'iloveprivacy'){
+                                    document.getElementById('extension-hotspot-change-password-hint').classList.remove('extension-hotspot-hidden');
+                                }
         				    }
         				}
+                        
+                        
+                        
+                        // Get latest list
+                        this.get_latest();
+                
+                        // Create the interval for the countdown timer
+                        if(this.interval == null){
+                			this.interval = setInterval(function(){
+                				//this.get_latest();
+                
+                                this.seconds++;
+                                //console.log(this.seconds);
+                
+                                if(this.seconds < 90 && this.aborted == false && this.cable_needed == false){
+                                    document.getElementById('extension-hotspot-countdown-seconds').innerText = 90 - this.seconds;
+                                    document.getElementById('extension-hotspot-countdown').classList.remove('extension-hotspot-hidden');
+                                }
+                                else{
+                                    document.getElementById('extension-hotspot-countdown').classList.add('extension-hotspot-hidden');
+                                    if(this.launched == false){
+                                        this.launched = true;
+                                        this.regenerate_items();
+                                    }
+                                }
+                			}.bind(this), 1000);
+                        }
+                        
+                        
                     }
                     
 				}
                 
-                // Get latest list
-                this.get_latest();
-                
-                if(this.interval == null){
-        			this.interval = setInterval(function(){
-        				//this.get_latest();
-                
-                        this.seconds++;
-                        //console.log(this.seconds);
-                
-                        if(this.seconds < 90 && this.aborted == false && this.cable_needed == false){
-                            document.getElementById('extension-hotspot-countdown-seconds').innerText = 90 - this.seconds;
-                            document.getElementById('extension-hotspot-countdown').classList.remove('extension-hotspot-hidden');
-                        }
-                        else{
-                            document.getElementById('extension-hotspot-countdown').classList.add('extension-hotspot-hidden');
-                            if(this.launched == false){
-                                this.launched = true;
-                                this.regenerate_items();
-                            }
-                        }
-        			}.bind(this), 1000);
-                }
+                document.getElementById('extension-hotspot-connection-error').classList.add('extension-hotspot-hidden');
     			
                 
                 
@@ -327,9 +342,16 @@
 	  			//console.log("Error sending abort command: " + e.toString());
 				document.getElementById('extension-hotspot-abort-message').innerText = "Hotspot: Error getting init data: " + e.toString();
                 console.log("Hotspot: Error getting init data: " + e.toString());
+                if(document.getElementById('extension-hotspot-connection-error') != null){
+                    document.getElementById('extension-hotspot-connection-error').classList.remove('extension-hotspot-hidden');
+                }
+                else{
+                    console.log("Hotspot: error, could not even show the connection error");
+                }
+                
                 
                 // Get latest list
-                this.get_latest();
+                //this.get_latest();
 	        });
             
             

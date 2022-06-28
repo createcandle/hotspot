@@ -23,13 +23,12 @@
   "id": "hotspot",
   "license": "MPL-2.0",
   "manifest_version": 1,
-  "name": "Candle hotspot",
+  "name": "Hotspot",
   "options": {
     "default": {
 	  "Hotspot name":"Candle",
 	  "Hotspot password":"iloveprivacy",
 	  "Time server": true,
-	  "Use without a network cable": false,
 	  "Multicast relay": false,
 	  "Use blocklist": true,
       "Debugging": false
@@ -42,22 +41,15 @@
         },
         "Hotspot password": {
             "description": "The password for the wifi hotspot.",
-            "type": "string"
+            "type": "string",
+			"writeOnly": true
         },
         "Use blocklist": {
-          "description": "Enabling this offer additional protection against behaviour tracking of your devices. This is done by blocking access to specific data collection servers that companies may use. Enabling this should not impede functionality.",
+          "description": "Enabling this offers additional built-in protection against behaviour tracking of your devices. This is done by blocking access to specific data collection servers that companies may use, based on lists with IP addresses of such servers.",
           "type": "boolean"
         },
         "Time server": {
           "description": "Your devices may want to incessantly ask for the time to various time servers, effectively revealing your IP address to those server. If you enable this option, all those requests will be handled by this server intead, through some redirection.",
-          "type": "boolean"
-        },
-        "Use without a network cable": {
-          "description": "It's recommended to only use the hotspot functionality while you have a network cable plugged in. Wirelessly connecting to both your router and your smart devices (effectively acting as a wifi repeater) is hard work, and is likely to be less reliable. But it is technically possible if you really want to try it.",
-          "type": "boolean"
-        },
-        "Multicast relay": {
-          "description": "Advanced. Experimental. If enabled there is some communication between your home network and the hotspot network.",
           "type": "boolean"
         },
         "Debugging": {
@@ -73,7 +65,7 @@
     }
   },
   "short_name": "hotspot",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "web_accessible_resources": [
     "css/*.css",
     "images/*.svg",
