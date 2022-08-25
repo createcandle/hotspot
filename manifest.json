@@ -31,6 +31,7 @@
 	  "Time server": true,
 	  "Multicast relay": false,
 	  "Use blocklist": true,
+	  "Skip network check": false,
       "Debugging": false
     },
     "schema": {
@@ -50,6 +51,10 @@
         },
         "Time server": {
           "description": "Your devices may want to incessantly ask for the time to various time servers, effectively revealing your IP address to those server. If you enable this option, all those requests will be handled by this server intead, through some redirection.",
+          "type": "boolean"
+        },
+        "Skip network check": {
+          "description": "Advanced. If enabled, your Candle Controller will no longer check if it has a netwok connection when it boots up. If your controller has no connection, then the Hotspot addon will still create its own wifi signal. Connecting to that will then be your only way to access the gateway (or until you connect a network cable). The upside is that it allows the controller to start even if there is no other network router available.",
           "type": "boolean"
         },
         "Debugging": {

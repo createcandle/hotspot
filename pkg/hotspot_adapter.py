@@ -1,4 +1,4 @@
-"""Hotspot adapter for WebThings Gateway."""
+"""Hotspot adapter for Candle Controller."""
 
 # A future release will no longer show privacy sensitive information via the debug option. 
 # For now, during early development, it will be available. Please be considerate of others if you use this in a home situation.
@@ -89,6 +89,7 @@ class HotspotAdapter(Adapter):
         self.allow_launch = True
         self.launched = False
         self.use_without_cable = False
+        self.config_skip_network_check = False
         self.cable_needed = False
         self.protected_animals_count = 0 # how many devices are not shown because they are likely a laptop or phone
         
@@ -129,6 +130,13 @@ class HotspotAdapter(Adapter):
         jump88 = os.path.join(self.user_profile['addonsDir'], self.addon_name, "jump88")
         if os.path.isfile(jump88):
             self.seconds = 88
+
+
+        # Detect the network check override command. if present the hotspot can start even if the device has no network connection, making it fully stand-alone.
+        self.skip_network_file_detected = False
+        if os.path.isfile('/boot/candle_skip_network.txt'):
+            self.skip_network_file_detected = True
+            #self.seconds = 30 # start the hotspot (90 - 30 =) 60 seconds after the gateway started
 
         # Make sure the data directory exists
         try:
@@ -296,7 +304,10 @@ class HotspotAdapter(Adapter):
                 print("No ethernet, and Hotspot may not run without an ethernet connection. Stopping.")
             self.cable_needed = True    
 
-        
+
+        # If the file was detected, and if the configuration says to skip,
+        if self.skip_network_file_detected:
+            self.cable_needed = False
 
         
         #time.sleep(1)
@@ -562,6 +573,17 @@ class HotspotAdapter(Adapter):
                 print("-Time server preference was in config, and is now set to: " + str(self.time_server))
                 
         
+        if 'Skip network check' in config:
+            self.config_skip_network_check = bool(config['Skip network check']) 
+            if self.config_skip_network_check == False:
+                if os.path.isfile('/boot/candle_skip_network.txt'):
+                    os.system('sudo rm /boot/candle_skip_network.txt')
+                self.skip_network_file_detected = False
+            else:
+                os.system('sudo touch /boot/candle_skip_network.txt')
+                #self.skip_network_file_detected = True
+		
+		
         # Api token
         try:
             if 'Authorization token' in config:
