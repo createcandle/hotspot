@@ -122,8 +122,9 @@
 					{'action':'abort'}
 
 		        ).then((body) => {
-					//console.log("abort response:");
-                    //console.log(body);
+					if(this.debug){
+                        console.log("abort response: ", body);
+                    }
                     this.aborted = true;
                     document.getElementById('extension-hotspot-abort-message').innerText = "Launch was aborted ";
                     
@@ -145,8 +146,10 @@
 					{'action':'launch'}
 
 		        ).then((body) => {
-					//console.log("launch now response:");
-                    //console.log(body);
+                    if(this.debug){
+                        console.log("launch now response:", body);
+                    }
+					
                     this.aborted = true;
                     document.getElementById('extension-hotspot-abort-message').innerText = "Launching...";
                     this.seconds = 89;
@@ -207,7 +210,9 @@
           					`/extensions/hotspot/api/ajax`,
           					{'action':'remove_from_master_blocklist','domain':target.dataset.domain}
           				).then((body) => { 
-          					//console.log("remove from blocklist reaction: ");
+                            if(this.debug){
+          					    console.log("remove from blocklist response: ", body);
+                            }
           					//console.log(body); 
           					if( body['state'] != true ){
           						pre.innerText = body['message'];
@@ -377,7 +382,7 @@
 
 			        ).then((body) => {
 						if(this.debug){
-                            console.log("Python API /latest result:");
+                            console.log("Hotspot Python API /latest result:");
     						console.log(body);
 						}
                         
