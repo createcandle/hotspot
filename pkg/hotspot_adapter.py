@@ -83,7 +83,8 @@ class HotspotAdapter(Adapter):
         # Get initial audio_output options
         #self.audio_controls = get_audio_controls()
         #print("audio controls: " + str(self.audio_controls))
-        time.sleep(2)
+        
+        self.child_pids = []
         
         self.seconds = 0
         self.allow_launch = True
@@ -190,8 +191,7 @@ class HotspotAdapter(Adapter):
         
         
 
-        time.sleep(3) # give the network some more time to settle
-        
+
         self.mac = get_own_mac("wlan0")
         self.hostname = get_own_hostname()
         if self.DEBUG:
@@ -207,7 +207,7 @@ class HotspotAdapter(Adapter):
         self.hotspot_password = "iloveprivacy"
         self.ip_address = "192.168.1.166"
         
-        self.child_pids = []
+        
         
         #Time server
         self.time_server = True
@@ -275,6 +275,7 @@ class HotspotAdapter(Adapter):
         if self.DEBUG:
             print("ssid = " + str(self.ssid))
         
+        time.sleep(3) # give the network some more time to settle
         
         filename = "/etc/resolv.conf"
         with open(filename) as f:

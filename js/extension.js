@@ -354,6 +354,11 @@
                     console.log("Hotspot: error, could not even show the connection error");
                 }
                 
+                setTimeout(() => {
+                    console.log("attempting to get init data again after previous attemp failed 10 seconds ago");
+                    this.get_init_data();
+                }, 10000);
+                
                 
                 // Get latest list
                 //this.get_latest();
