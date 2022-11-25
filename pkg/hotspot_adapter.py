@@ -94,6 +94,9 @@ class HotspotAdapter(Adapter):
         self.cable_needed = False
         self.protected_animals_count = 0 # how many devices are not shown because they are likely a laptop or phone
         
+        # blocklists
+        self.trackers_update_interval_seconds = 259200 # once every 3 days should be often enough
+        
         #print("os.uname() = " + str(os.uname()))
 
         # Some paths
@@ -109,6 +112,9 @@ class HotspotAdapter(Adapter):
         self.dnsmasq_addon_hosts_dir_path = os.path.join(self.addon_path, "hosts")
         
         self.master_blocklist_file_path = os.path.join(self.dnsmasq_hosts_dir_path, "master_blocklist.txt")
+        self.steven_black_blocklist_file_path = os.path.join(self.dnsmasq_hosts_dir_path, "StevenBlack_hosts.txt")
+        self.duck_duck_go_blocklist_file_path = os.path.join(self.dnsmasq_hosts_dir_path, "duck_duck_go_blocklist.txt")
+        
         
         self.multicast_relay_file_path = os.path.join(self.addon_path, "multicast-relay.py")
         self.time_server_file_path = os.path.join(self.addon_path, "time_server.py")
@@ -189,9 +195,6 @@ class HotspotAdapter(Adapter):
             except Exception as ex:
                 print("Error creating initial persistence variable: " + str(ex))
         
-        
-
-
         self.mac = get_own_mac("wlan0")
         self.hostname = get_own_hostname()
         if self.DEBUG:
@@ -205,7 +208,93 @@ class HotspotAdapter(Adapter):
         self.country_code = "NL"
         self.hotspot_name = "Candle"
         self.hotspot_password = "iloveprivacy"
-        self.ip_address = "192.168.1.166"
+        self.ip_address = None
+        
+        self.wifi_country_codes_table = {
+                    "Algeria":"DZ",
+                    "United States":"US",
+                    "Canada":"CA",
+                    "Japan":"JP",
+                    "Germany":"DE",
+                    "Netherlands":"NL",
+                    "Italy":"IT",
+                    "Portugal":"PT",
+                    "Luxembourg":"LU",
+                    "Norway":"NO",
+                    "Finland":"FI",
+                    "Denmark":"DK",
+                    "Switzerland":"CH",
+                    "Czech Republic":"CZ",
+                    "Spain":"ES",
+                    "United Kingdom":"GB",
+                    "South Korea":"KR",
+                    "China":"CN",
+                    "France":"FR",
+                    "Hong Kong":"HK",
+                    "Singapore":"SG",
+                    "Taiwan":"TW",
+                    "Brazil":"BR",
+                    "Israel":"IL",
+                    "Saudi Arabia":"SA",
+                    "Lebanon":"LB",
+                    "United Arab Emirates":"AE",
+                    "South Africa":"ZA",
+                    "Argentina":"AR",
+                    "Australia":"AU",
+                    "Austria":"AT",
+                    "Bolivia":"BO",
+                    "Chile":"CL",
+                    "Greece":"GR",
+                    "Iceland":"IS",
+                    "India":"IN",
+                    "Ireland":"IE",
+                    "Kuwait":"KW",
+                    "Liechtenstein":"LI",
+                    "Lithuania":"LT",
+                    "Mexico":"MX",
+                    "Morocco":"MA",
+                    "New Zealand":"NZ",
+                    "Poland":"PL",
+                    "Puerto Rico":"PR",
+                    "Slovak Republic":"SK",
+                    "Slovenia":"SI",
+                    "Thailand":"TH",
+                    "Uruguay":"UY",
+                    "Panama":"PA",
+                    "Russia":"RU",
+                    "Egypt":"EG",
+                    "Trinidad and Tobago":"TT",
+                    "Turkey":"TR",
+                    "Costa Rica":"CR",
+                    "Ecuador":"EC",
+                    "Honduras":"HN",
+                    "Kenya":"KE",
+                    "Ukraine":"UA",
+                    "Vietnam":"VN",
+                    "Bulgaria":"BG",
+                    "Cyprus":"CY",
+                    "Estonia":"EE",
+                    "Mauritius":"MU",
+                    "Romania":"RO",
+                    "Serbia and Montenegro":"CS",
+                    "Indonesia":"ID",
+                    "Peru":"PE",
+                    "Venezuela":"VE",
+                    "Jamaica":"JM",
+                    "Bahrain":"BH",
+                    "Oman":"OM",
+                    "Jordan":"JO",
+                    "Bermuda":"BM",
+                    "Colombia":"CO",
+                    "Dominican Republic":"DO",
+                    "Guatemala":"GT",
+                    "Philippines":"PH",
+                    "Sri Lanka":"LK",
+                    "El Salvador":"SV",
+                    "Tunisia":"TN",
+                    "Pakistan":"PK",
+                    "Qatar":"QA"
+                    }
         
         
         
@@ -229,6 +318,9 @@ class HotspotAdapter(Adapter):
         self.last_blocked_domain_countdown = 0
         self.domain_countdown_time = 5
         
+        # tracking blocklist
+        self.updating_blocklists_allowed = False
+        
         # TODO DEV
         #os.system("sudo pkill dnsmasq")
         
@@ -247,6 +339,12 @@ class HotspotAdapter(Adapter):
             if 'ip_to_mac' not in self.persistent_data:
                 print("ip_to_mac was not in persistent data, adding it now.")
                 self.persistent_data['ip_to_mac'] = {}
+            
+            if 'last_trackers_update_time' not in self.persistent_data:
+                print("last_trackers_update_time was not in persistent data, adding it now.")
+                self.persistent_data['last_trackers_update_time'] = 0
+            
+                
         except Exception as ex:
             print("Error fixing missing values in persistent data: " + str(ex))
         
@@ -465,6 +563,12 @@ class HotspotAdapter(Adapter):
                 #os.system('/usr/sbin/rfkill block wifi;/usr/sbin/rfkill unblock wifi')
                 #os.system('/usr/sbin/rfkill unblock wifi')
                     
+                if self.updating_blocklists_allowed == True:
+                    if time.time() - self.trackers_update_interval_seconds > self.persistent_data['last_trackers_update_time']:
+                        self.update_blocklists()
+                    
+                    
+                    
         if self.DEBUG:
             print("hotspot clock stopped")         
                 
@@ -537,8 +641,7 @@ class HotspotAdapter(Adapter):
         except Exception as ex:
             print("Error loading hotspot name from config: " + str(ex))
         
-        
-        
+
         # Hotspot password
         try:
             if 'Hotspot password' in config:
@@ -546,21 +649,35 @@ class HotspotAdapter(Adapter):
                     print("-Hotspot password is present in the config data.")
                 self.hotspot_password = str(config['Hotspot password'])
         except Exception as ex:
-            print("Error loading hotspot password from config: " + str(ex))
-        
+            print("Error loading password from config: " + str(ex))
 
+        # Country code
+        try:
+            if 'Country' in config:
+                if self.DEBUG:
+                    print("-Country is present in the config data: " + str(config['Country']))
+                if str(config['Country']) in self.wifi_country_codes_table:
+                    self.country_code = self.wifi_country_codes_table[ str(config['Country']) ]
+                else:
+                    if self.DEBUG:
+                        print("-ERROR, Country not in Wi-Fi code lookup list")
+        except Exception as ex:
+            print("Error loading country from config: " + str(ex))
 
         if 'Use without a network cable' in config:
             self.use_without_cable = bool(config['Use without a network cable']) 
             if self.DEBUG:
                 print("-Use without a network cable preference was in config, and is now set to: " + str(self.use_without_cable))
 
-
         if 'Use blocklist' in config:
             self.use_blocklists = bool(config['Use blocklist']) 
             if self.DEBUG:
                 print("-Blocklist preference was in config, and is now set to: " + str(self.use_blocklists))
         
+        if 'Allow blocklist updating' in config:
+            self.updating_blocklists_allowed = bool(config['Allow blocklist updating']) 
+            if self.DEBUG:
+                print("-Blocklist updating preference was in config, and is now set to: " + str(self.updating_blocklists_allowed))
         
         if 'Multicast relay' in config:
             self.use_multicast_relay = bool(config['Multicast relay']) 
@@ -578,9 +695,13 @@ class HotspotAdapter(Adapter):
             self.config_skip_network_check = bool(config['Skip network check']) 
             if self.config_skip_network_check == False:
                 if os.path.isfile('/boot/candle_skip_network.txt'):
+                    if self.DEBUG:
+                        print("removing /boot/candle_skip_network.txt")
                     os.system('sudo rm /boot/candle_skip_network.txt')
                 self.skip_network_file_detected = False
             else:
+                if self.DEBUG:
+                    print("creating /boot/candle_skip_network.txt")
                 os.system('sudo touch /boot/candle_skip_network.txt')
                 #self.skip_network_file_detected = True
 		
@@ -608,6 +729,12 @@ class HotspotAdapter(Adapter):
         except Exception as ex:
             if self.DEBUG:
                 print("Error getting ip address: " + str(ex)) 
+        
+        
+        if self.ip_address == None:
+            if self.DEBUG:
+                print("Error, no valid IP address. Will not start hotspot (hostapd)")
+            return
         
         
         self.send_pairing_prompt( "Creating Hotspot" )
@@ -1327,6 +1454,94 @@ rsn_pairwise=CCMP"""
                 print("saved master_blocklist hosts file : " + str(self.master_blocklist_file_path))
 
  
+ 
+ 
+ 
+    def update_blocklists(self):
+        if self.DEBUG:
+            print("in update_blocklists")
+        try:
+            
+            # Steve Black blocklist
+            r = requests.get('https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts')
+            #print(str(r.text))
+            if len(r.text > 1000):
+                with open(self.steven_black_blocklist_file_path, 'w') as f:
+    
+                    f.write(r.text)
+                
+                    self.persistent_data['last_trackers_update_time'] = time.time()
+                    if self.DEBUG:
+                        print("Succesfully downloaded latest Steven Black blocklist")        
+            
+            else:
+                if self.DEBUG:
+                    print("WARNING, Steve Black tracker list was not very long, probably an ERROR? Will try again in 10 minutes.")
+                self.persistent_data['last_trackers_update_time'] = time.time() - (self.trackers_update_interval_seconds - 600) # if it failed, then try again in 10 minutes
+            
+            
+            
+            # DOWNLOAD DUCK DUCK GO BLOCKLIST
+            # Only allows non-commercial use, which I cannot guarantee users will respect, so disabled for now.
+            """
+            r = requests.get('https://raw.githubusercontent.com/duckduckgo/tracker-blocklists/main/web/tds.json')
+            #print(str(r.text))
+
+            duck_duck_go_json = json.loads(r.text)
+
+            if 'trackers' in duck_duck_go_json:
+    
+                tracking_domains = "# Blocklist curated by Duck Duck Go\n# https://github.com/duckduckgo/tracker-blocklists/\n# Licensed under the CC BY-NC-SA 4.0 license, available at https://creativecommons.org/licenses/by-nc-sa/4.0/\n"
+                for key in duck_duck_go_json['trackers']:
+                    tracking_domains += '0.0.0.0 ' + key + '\n'
+    
+                    #print(str(tracking_domains))
+    
+                with open(self.duck_duck_go_blocklist_file_path, 'w') as f:
+    
+                    if len(tracking_domains) > 100:
+                        #print("that's long list, nice")
+                        f.write(tracking_domains)
+                    
+                        self.persistent_data['last_trackers_update_time'] = time.time()
+                        if self.DEBUG:
+                            print("Succesfully downloaded latest Duck Duck Go blocklist")
+                        
+                    else:
+                        if self.DEBUG:
+                            print("WARNING, duck duck go tracker list was not very long, probably an ERROR? Will try again in 10 minutes.")
+                        self.persistent_data['last_trackers_update_time'] = time.time() - (self.trackers_update_interval_seconds - 600) # if it failed, then try again in 10 minutes
+                            
+            else:
+                if self.DEBUG:
+                    print("ERROR, no tracker list in downloaded Duck Duck Go trackers json. Will try again in 10 minutes.")
+                self.persistent_data['last_trackers_update_time'] = time.time() - (self.trackers_update_interval_seconds - 600)
+                    
+            """
+                    
+                    
+            
+                    
+                            
+        except Exception as ex:
+            if self.DEBUG:
+                print("Error while updating blocklists: " + str(ex))
+            self.persistent_data['last_trackers_update_time'] = time.time() - (self.trackers_update_interval_seconds - 600) # if it failed, then try again in 10 minutes
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
     def remove_thing(self, device_id):
         try:
             obj = self.get_device(device_id)        
@@ -1335,6 +1550,7 @@ rsn_pairwise=CCMP"""
                 print("User removed Hotspot device")
         except:
             print("Could not remove things from devices")
+
 
 
 
@@ -1431,14 +1647,14 @@ rsn_pairwise=CCMP"""
                 if self.DEBUG:
                     print("Persistence file existed. Will try to save to it.")
 
-            with open(self.persistence_file_path) as f:
+            #with open(self.persistence_file_path) as f:
                 #if self.DEBUG:
                 #    print("saving persistent data: " + str(self.persistent_data))
                 #pretty = json.dumps(self.persistent_data, sort_keys=True, indent=4, separators=(',', ': '))
-                json.dump( self.persistent_data, open( self.persistence_file_path, 'w+' ), indent=4 )
-                if self.DEBUG:
-                    print("Data stored")
-                return True
+            json.dump( self.persistent_data, open( self.persistence_file_path, 'w+' ), indent=4 )
+            if self.DEBUG:
+                print("Data stored")
+            return True
 
         except Exception as ex:
             if self.DEBUG:

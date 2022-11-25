@@ -139,7 +139,9 @@
             
             // Launch button
 			document.getElementById('extension-hotspot-launch-button').addEventListener('click', (event) => {
-				//console.log("launch button clicked");
+				if(this.debug){
+                    console.log("launch now button clicked");
+                }
                 
 		        window.API.postJson(
 		          `/extensions/hotspot/api/ajax`,
