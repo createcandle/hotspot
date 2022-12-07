@@ -5,3 +5,5 @@ It does this by generate a wifi hotspot from your Raspberry Pi, to which you can
 - Keep the Wi-Fi devices separate from your home network, so they can't see your phone or laptop. This limits the risk if one of these devices is hacked.
 - You can also see which webservers the devices try to connect to. This can be very revealing.
 - You can even block those connections with the click of a button. For example, you can allow a smart thermostat to connect to its main server, but not to any additional advertising servers.
+
+![Candle Hotspot screenshot](screenshot.png)
