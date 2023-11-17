@@ -108,6 +108,7 @@ class HotspotAdapter(Adapter):
         self.hostapd_conf_file_path = os.path.join(self.data_dir_path, "hostapd.conf")
         self.dnsmasq_conf_file_path = os.path.join(self.data_dir_path, "dnsmasq.conf")
         self.dnsmasq_log_file_path = os.path.join(self.data_dir_path, "dnsmasq_log.conf")
+        self.dnsmasq_leases_file_path = os.path.join(self.data_dir_path, "leases.txt")
         self.dnsmasq_hosts_dir_path = os.path.join(self.data_dir_path, "hosts")
         self.dnsmasq_addon_hosts_dir_path = os.path.join(self.addon_path, "hosts")
         
@@ -120,11 +121,15 @@ class HotspotAdapter(Adapter):
         self.time_server_file_path = os.path.join(self.addon_path, "time_server.py")
         
         
+        self.boot_path = '/boot'
+        if os.path.exists('/boot/firmware'):
+            self.boot_path = '/boot/firmware'
         
-        if os.path.isfile("/boot/nohotspot.txt"):
+        if os.path.isfile(self.boot_path + "/nohotspot.txt"):
             print("nohotspot.txt file spotted on SD card, so hotspot addon will not launch.")
             return
         
+        # skip the 90 second wait a bit during development:
         jump45 = os.path.join(self.user_profile['addonsDir'], self.addon_name, "jump45")
         #print("jump45 = " + str(jump45))
         if os.path.isfile(jump45):
@@ -141,7 +146,7 @@ class HotspotAdapter(Adapter):
 
         # Detect the network check override command. if present the hotspot can start even if the device has no network connection, making it fully stand-alone.
         self.skip_network_file_detected = False
-        if os.path.isfile('/boot/candle_skip_network.txt'):
+        if os.path.isfile(self.boot_path + '/candle_skip_network.txt'):
             self.skip_network_file_detected = True
             #self.seconds = 30 # start the hotspot (90 - 30 =) 60 seconds after the gateway started
 
@@ -429,18 +434,14 @@ class HotspotAdapter(Adapter):
         
         
         # starting time server
-        if self.DEBUG:
-            print("__")
-            print("TIMESERVER COMMAND")
+        
         hostapd_command = "sudo /usr/sbin/hostapd -B " + self.hostapd_conf_file_path
         time_server_command = "sudo python3 " + self.time_server_file_path + " 192.168.12.1 123"
-        if self.DEBUG:
-            print(str( time_server_command ))
-        
+
         kill(time_server_command)
         if self.time_server:
             if self.DEBUG:
-                print("starting time server")
+                print("starting time server. Command: " + str(time_server_command))
             self.time_server_process = subprocess.Popen(time_server_command.split(), stdout=subprocess.PIPE, 
                                  stderr=subprocess.PIPE, universal_newlines=True, preexec_fn=os.setpgrp)
             if self.DEBUG:
@@ -500,7 +501,7 @@ class HotspotAdapter(Adapter):
             try:
                 if self.seconds < 91:
                     if self.DEBUG:
-                        print(self.seconds)
+                        print("hotspot start countdown: ", 90 - self.seconds)
                 if self.allow_launch == True:
                     if self.seconds == 90:
                         if self.allow_launch == True:
@@ -694,15 +695,15 @@ class HotspotAdapter(Adapter):
         if 'Skip network check' in config:
             self.config_skip_network_check = bool(config['Skip network check']) 
             if self.config_skip_network_check == False:
-                if os.path.isfile('/boot/candle_skip_network.txt'):
+                if os.path.isfile(self.boot_path + '/candle_skip_network.txt'):
                     if self.DEBUG:
-                        print("removing /boot/candle_skip_network.txt")
-                    os.system('sudo rm /boot/candle_skip_network.txt')
+                        print("removing candle_skip_network.txt from boot partition")
+                    os.system('sudo rm ' + self.boot_path + '/candle_skip_network.txt')
                 self.skip_network_file_detected = False
             else:
                 if self.DEBUG:
-                    print("creating /boot/candle_skip_network.txt")
-                os.system('sudo touch /boot/candle_skip_network.txt')
+                    print("creating candle_skip_network.txt")
+                os.system('sudo touch ' + self.boot_path + '/candle_skip_network.txt')
                 #self.skip_network_file_detected = True
 		
 		
@@ -747,7 +748,22 @@ class HotspotAdapter(Adapter):
         #dnsmasq_conf_string = """interface=lo,uap0
         dnsmasq_conf_string = """interface=lo,uap0
 no-dhcp-interface=lo,wlan0,eth0
-#strict-order
+# gives out IP adddresses predictably, starting with x, then x+1, then x+2, etc.
+#strict-order 
+
+# experiment
+enable-ra
+#dhcp-option=19,0           # option ip-forwarding off
+# This alias makes a result of 1.2.3.4 appear as 5.6.7.8
+#alias=1.2.3.4,5.6.7.8
+# and this maps 1.2.3.x to 5.6.7.x
+#alias=1.2.3.0,5.6.7.0,255.255.255.0
+# and this maps 192.168.0.10->192.168.0.40 to 10.0.0.10->10.0.0.40
+#alias=192.168.0.10-192.168.0.40,10.0.0.0,255.255.255.0
+# fc00::/7
+dhcp-option=option6:dns-server,[::]
+#dhcp-range=2001:db8:2:300:1234:5678:abcd:100,2001:db8:2:300:1234:5678:abcd:400,ra-only,infinite
+
 dhcp-authoritative
 dhcp-rapid-commit
 bind-interfaces
@@ -760,13 +776,20 @@ server=""" + self.name_server + "\n"
 dns-loop-detect
 domain=local
 #local=/local/ 
+
+# prevent packets with malformed domain names and packets with private IP addresses from leaving the network
+# Never forward plain names (without a dot or domain part)
 domain-needed
+# Never forward addresses in the non-routed address spaces.
 bogus-priv
+
+
 #local-service
 cache-size=1500
 no-negcache
 dhcp-client-update
 dhcp-range=192.168.12.2,192.168.12.30,255.255.255.0,1h
+#dhcp-option=option:gateway,192.168.12.1
 dhcp-option=option:router,192.168.12.1
 #dhcp-option=option6:dns-server,[]
 dhcp-option=option:dns-server,192.168.12.1,""" + self.name_server + "\n"
@@ -778,8 +801,8 @@ dhcp-option=option:dns-server,192.168.12.1,""" + self.name_server + "\n"
         #dnsmasq_conf_string += "\n"
         dnsmasq_conf_string += """#dhcp-option=option:dns-server,192.168.12.1,192.168.2.2,8.8.8.8
 dhcp-option=option:ip-forward-enable,1
-dhcp-lease-max=10
-dhcp-leasefile=""" + "/home/pi/.webthings/data/hotspot/leases.txt" + "\n"
+dhcp-lease-max=50
+dhcp-leasefile=""" + self.dnsmasq_leases_file_path + "\n"
 
         dnsmasq_conf_string += """#listen-address=192.168.12.1
 log-queries
@@ -858,6 +881,8 @@ rsn_pairwise=CCMP"""
 
         # enabling ip forwarding between interfaces within the pi itself
         os.system("sudo sysctl -w net.ipv4.ip_forward=1")
+        os.system("sudo sysctl -w net.ipv6.ip_forward=1")
+        #net/ipv6/conf/all/forwarding=1
         #os.system("sudo sysctl -w net.ipv4.conf.uap0.route_localnet=1")
         time.sleep(.1)
         
@@ -865,7 +890,7 @@ rsn_pairwise=CCMP"""
         try:
             
             # kill any potential left-overs
-            #kill("multicast-relay.py --interfaces wlan0 uap0")
+            #kill("multicast-relay.py")
             #kill("wpa_supplicant -B -c/etc/wpa_supplicant/wpa_supplicant.conf -iuap0")
             os.system("sudo pkill hostapd")
             
@@ -1134,8 +1159,11 @@ rsn_pairwise=CCMP"""
             # dhcpsd restarts wpa_supplicant.. so it must be stopped again
             kill("wpa_supplicant -B -c/etc/wpa_supplicant/wpa_supplicant.conf -iuap0")
             
-            #print("starting multicast relay")
-            #os.system("python3 multicast-relay.py --homebrewNetifaces --ifNameStructLen 32 --interfaces wlan0 uap0")
+            if self.use_multicast_relay:
+                print("starting multicast relay")
+                kill("multicast-relay.py")
+                time.sleep(1)
+                os.system("python3 multicast-relay.py --homebrewNetifaces --ifNameStructLen 32 --interfaces wlan0 uap0 &")
             
             """
             if self.use_multicast_relay:
@@ -1185,7 +1213,7 @@ rsn_pairwise=CCMP"""
                         if not line:
                             if self.DEBUG:
                                 print("dnsmasq loop: ok was false")
-                            ok = False
+                            ok = False # still used?
                             break
                         if key.fileobj is self.dnsmasq_process.stdout:
                             #if self.DEBUG:
