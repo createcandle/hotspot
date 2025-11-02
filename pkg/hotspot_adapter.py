@@ -847,7 +847,6 @@ bssid=""" + self.mac_zero + "\n"
 channel=6
 ieee80211n=1
 wmm_enabled=1
-
 auth_algs=1
 wpa=2
 wpa_passphrase=""" + self.hotspot_password + "\n"
