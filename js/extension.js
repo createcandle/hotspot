@@ -290,10 +290,19 @@
                         document.getElementById('extension-hotspot-response').classList.remove('extension-hotspot-hidden');
     			    }
                 }
-                
-                // Cable needed?
-                if(typeof body.cable_needed !='undefined'){
-				    if(body.cable_needed){
+				
+				if(typeof body.nmcli_installed == 'boolean' && body.nmcli_installed == true){
+                    
+					// Get latest list
+                    this.get_latest();
+					
+                    this.launched = true;
+                    this.regenerate_items();
+					
+				}
+                else if(typeof body.cable_needed == 'boolean'){ // Cable needed?
+				    
+					if(body.cable_needed){
                         this.cable_needed = body.cable_needed;
 				        document.getElementById('extension-hotspot-cable-tip').classList.remove('extension-hotspot-hidden');
 				    }
@@ -308,8 +317,6 @@
                                 }
         				    }
         				}
-                        
-                        
                         
                         // Get latest list
                         this.get_latest();
