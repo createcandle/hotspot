@@ -383,7 +383,13 @@ class HotspotAdapter(Adapter):
         except Exception as ex:
             print("Error fixing missing values in persistent data: " + str(ex))
         
-        
+
+		# LOAD CONFIG
+        try:
+            self.add_from_config()
+        except Exception as ex:
+            print("Error loading config: " + str(ex))
+			
         #
         # Create UI
         #
@@ -398,11 +404,7 @@ class HotspotAdapter(Adapter):
             print("Failed to start API handler (this only works on gateway version 0.10 or higher). Error: " + str(e))
             
         
-        # LOAD CONFIG
-        try:
-            self.add_from_config()
-        except Exception as ex:
-            print("Error loading config: " + str(ex))
+        
             
         self.ssid = self.hotspot_name + " " + self.persistent_data['unique_id'] + "_nomap"
         if self.DEBUG:
