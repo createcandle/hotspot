@@ -86,6 +86,14 @@ class HotspotAdapter(Adapter):
         
         self.child_pids = []
         
+        self.nmcli_installed = False
+        nmcli_check = run_command('which nmcli')
+        if nmcli_check != None:
+            if str(nmcli_check).startswith('/') and str(nmcli_check).endswith('/nmcli'):
+                self.nmcli_installed = True
+        
+        self.previous_dnsmasq_now = ''
+        
         self.seconds = 0
         self.allow_launch = True
         self.launched = False
@@ -127,6 +135,10 @@ class HotspotAdapter(Adapter):
         
         if os.path.isfile(self.boot_path + "/nohotspot.txt"):
             print("nohotspot.txt file spotted on SD card, so hotspot addon will not launch.")
+            return
+            
+        if os.path.isfile(self.boot_path + "/candle_no_hotspot.txt"):
+            print("candle_no_hotspot.txt file spotted on SD card, so hotspot addon will not launch.")
             return
         
         # skip the 90 second wait a bit during development:
@@ -378,7 +390,8 @@ class HotspotAdapter(Adapter):
         if self.DEBUG:
             print("ssid = " + str(self.ssid))
         
-        time.sleep(3) # give the network some more time to settle
+        if self.nmcli_installed == False:
+            time.sleep(3) # give the network some more time to settle
         
         filename = "/etc/resolv.conf"
         with open(filename) as f:
@@ -390,20 +403,19 @@ class HotspotAdapter(Adapter):
                 self.name_server = line.split(" ")[1]
                 self.name_server = self.name_server.replace("\n","")
                 if self.DEBUG:
-                    print("name server: " + str(self.name_server))
+                    print("name server from /etc/resolv.conf: " + str(self.name_server))
             
 
         #if self.DEBUG:
         #    print("self.persistent_data is now:")
         #    print(str(self.persistent_data))
 
-
-
+ 
         # Connected via ethernet?
-        self.ethernet_state = shell('cat /sys/class/net/eth0/operstate')
+        
         if self.DEBUG:
             print("ethernet_state: " + str(self.ethernet_state))
-        if 'down' in self.ethernet_state and self.use_without_cable == False:
+        if 'down' in str(self.ethernet_state) and self.use_without_cable == False:
             if self.DEBUG:
                 print("No ethernet, and Hotspot may not run without an ethernet connection. Stopping.")
             self.cable_needed = True    
@@ -438,18 +450,19 @@ class HotspotAdapter(Adapter):
         hostapd_command = "sudo /usr/sbin/hostapd -B " + self.hostapd_conf_file_path
         time_server_command = "sudo python3 " + self.time_server_file_path + " 192.168.12.1 123"
 
-        kill(time_server_command)
-        if self.time_server:
-            if self.DEBUG:
-                print("starting time server. Command: " + str(time_server_command))
-            self.time_server_process = subprocess.Popen(time_server_command.split(), stdout=subprocess.PIPE, 
-                                 stderr=subprocess.PIPE, universal_newlines=True, preexec_fn=os.setpgrp)
-            if self.DEBUG:
-                print("time server PID = " + str(self.time_server_process.pid))
-            self.time_server_pid = self.time_server_process.pid
-            self.child_pids.append(self.time_server_process.pid)
-            if self.DEBUG:
-                print("internal time server started")
+        if self.nmcli_installed == False:
+            kill(time_server_command)
+            if self.time_server:
+                if self.DEBUG:
+                    print("starting time server. Command: " + str(time_server_command))
+                self.time_server_process = subprocess.Popen(time_server_command.split(), stdout=subprocess.PIPE, 
+                                     stderr=subprocess.PIPE, universal_newlines=True, preexec_fn=os.setpgrp)
+                if self.DEBUG:
+                    print("time server PID = " + str(self.time_server_process.pid))
+                self.time_server_pid = self.time_server_process.pid
+                self.child_pids.append(self.time_server_process.pid)
+                if self.DEBUG:
+                    print("internal time server started")
         
 
 
@@ -494,28 +507,29 @@ class HotspotAdapter(Adapter):
             #    print("disabling wifi power saving")
             #os.system("sudo iw dev wlan0 set power_save off")
 
-        while self.running:
-            time.sleep(1)
-            if self.allow_launch:
-                self.seconds += 1
-            try:
-                if self.seconds < 91:
-                    if self.DEBUG:
-                        print("hotspot start countdown: ", 90 - self.seconds)
-                if self.allow_launch == True:
-                    if self.seconds == 90:
-                        if self.allow_launch == True:
-                            if self.DEBUG:
-                                print("CLOCK -> 90sec -> start hotspot")
-                            self.start_hostapd() # it stops here, as this is blocking
+        if self.nmcli_installed == False:
+            while self.running:
+                time.sleep(1)
+                if self.allow_launch:
+                    self.seconds += 1
+                try:
+                    if self.seconds < 91:
+                        if self.DEBUG:
+                            print("hotspot start countdown: ", 90 - self.seconds)
+                    if self.allow_launch == True:
+                        if self.seconds == 90:
+                            if self.allow_launch == True:
+                                if self.DEBUG:
+                                    print("CLOCK -> 90sec -> start hotspot")
+                                self.start_hostapd() # it stops here, as this is blocking
                             
-                            #self.d = threading.Thread(target=self.start_hostapd)
-                            #self.d.daemon = True
-                            #self.d.start()
+                                #self.d = threading.Thread(target=self.start_hostapd)
+                                #self.d.daemon = True
+                                #self.d.start()
 
-            except Exception as ex:
-                if self.DEBUG:
-                    print("Error in dnsmasq loop: " + str(ex))
+                except Exception as ex:
+                    if self.DEBUG:
+                        print("Error in dnsmasq loop: " + str(ex))
                 
 
                 
@@ -523,11 +537,23 @@ class HotspotAdapter(Adapter):
             
     def clock(self):
         if self.DEBUG:
-            print("starting clock")
+            print("in clock thread")
             
         unblock_countdown = 30
         while self.running:
             time.sleep(1)
+            
+            #self.previous_dnsmasq_now
+            
+            dnsmasq_now_lines = []
+            if os.path.exists('/home/pi/dnsmasq_now.txt'):
+                with open('/home/pi/dnsmasq_now.txt') as dnsmasq_now_f:
+                    dnsmasq_now_lines = dnsmasq_now_f.readlines()
+                os.path.unlink('/home/pi/dnsmasq_now.txt')
+                    
+            if len(dnsmasq_now_lines):
+                for line in dnsmasq_now_lines:
+                    self.parse_dnsmasq(line)
             
             #print("self.last_any_domain_countdown = " + str(self.last_any_domain_countdown))
             if self.last_new_domain_countdown > 0:
@@ -551,7 +577,8 @@ class HotspotAdapter(Adapter):
             unblock_countdown -= 1
             if unblock_countdown < 1:
                 unblock_countdown = 30
-                os.system('sudo pkill wpa_supplicant')
+                if self.nmcli_installed == False:
+                    os.system('sudo pkill wpa_supplicant')
                 # it's strange that this is needed.. but it works. Thanks to https://github.com/RaspAP/raspap-webgui/issues/200
                 
                 #/usr/sbin/rfkill list wifi | grep -q "Soft blocked: yes"
@@ -731,7 +758,11 @@ class HotspotAdapter(Adapter):
             if self.DEBUG:
                 print("Error getting ip address: " + str(ex)) 
         
-        
+        if self.nmcli_installed == True:
+            if self.DEBUG:
+                print("hotspot addon will not start hostapd, as nmcli is installed")
+            return
+            
         if self.ip_address == None:
             if self.DEBUG:
                 print("Error, no valid IP address. Will not start hotspot (hostapd)")
@@ -1253,7 +1284,13 @@ rsn_pairwise=CCMP"""
     def parse_dnsmasq(self,line):
         line = line.replace("\n", "")
         if self.DEBUG:
-            print("parsing: --" + str(line) + "--")
+            print("parse_dnsmasq: parsing: --" + str(line) + "--")
+        
+        if len(line) < 2:
+            if self.DEBUG:
+                print("- parse_dnsmasq: skipping empty line")
+            return    
+            
         if "available DHCP range:" in line:
             if self.DEBUG:
                 print("new DHCP connection spotted")
@@ -1621,40 +1658,41 @@ rsn_pairwise=CCMP"""
         
         self.save_persistent_data()
         self.running = False
-        
-        for pid in self.child_pids:
-            if self.DEBUG:
-                print("- killing pid: " + str(pid))
-            shell("sudo kill {}".format(pid))
-        """
-        if self.hostapd_pid != None:
-            #os.kill(self.hostapd_pid, signal.SIGTERM)
-            shell("sudo kill {}".format(self.hostapd_pid))
-            print("hostapd process has been asked to stop")
-        if self.dnsmasq_pid != None:
-            #os.kill(self.dnsmasq_pid, signal.SIGTERM)
-            shell("sudo kill {}".format(self.dnsmasq_pid))
-            print("dnsmasq process has been asked to stop")
+        if self.nmcli_installed == False:
+            for pid in self.child_pids:
+                if self.DEBUG:
+                    print("- killing pid: " + str(pid))
+                shell("sudo kill {}".format(pid))
+                
+            """
+            if self.hostapd_pid != None:
+                #os.kill(self.hostapd_pid, signal.SIGTERM)
+                shell("sudo kill {}".format(self.hostapd_pid))
+                print("hostapd process has been asked to stop")
+            if self.dnsmasq_pid != None:
+                #os.kill(self.dnsmasq_pid, signal.SIGTERM)
+                shell("sudo kill {}".format(self.dnsmasq_pid))
+                print("dnsmasq process has been asked to stop")
             
-            # os.system("sudo pkill -9 -P " + str(proc.pid))
-            # https://stackoverflow.com/questions/50618411/killing-sudo-started-subprocess-in-python
+                # os.system("sudo pkill -9 -P " + str(proc.pid))
+                # https://stackoverflow.com/questions/50618411/killing-sudo-started-subprocess-in-python
         
-            # it IS simple to kill based on command string:
-            # pkill -f "ping google.com"
-        """
+                # it IS simple to kill based on command string:
+                # pkill -f "ping google.com"
+            """
            
-        if self.launched: 
-            # remove uap0 interface
-            os.system("sudo iw dev uap0 del")
-            os.system("sudo ip link set dev wlan0 up")
+            if self.launched: 
+                # remove uap0 interface
+                os.system("sudo iw dev uap0 del")
+                os.system("sudo ip link set dev wlan0 up")
         
-            #disable transporting packets internally
-            os.system("sudo sysctl -w net.ipv4.ip_forward=0")
+                #disable transporting packets internally
+                os.system("sudo sysctl -w net.ipv4.ip_forward=0")
             
-            # restore services
-            os.system("sudo systemctl start wpa_supplicant.service")
-            os.system("sudo systemctl start dhcpcd.service")
-            #os.system("sudo pkill dhcpcd")
+                # restore services
+                os.system("sudo systemctl start wpa_supplicant.service")
+                os.system("sudo systemctl start dhcpcd.service")
+                #os.system("sudo pkill dhcpcd")
         
 
 #
@@ -1717,39 +1755,3 @@ rsn_pairwise=CCMP"""
         else:
             return False
 
-
-def shell(command):
-    #print("HOTSPOT SHELL COMMAND = " + str(command))
-    shell_check = ""
-    try:
-        shell_check = subprocess.check_output(command, shell=True)
-        shell_check = shell_check.decode("utf-8")
-        shell_check = shell_check.strip()
-    except:
-        pass
-    return shell_check 
-        
-
-
-def kill(command):
-    check = ""
-    try:
-        search_command = "ps ax | grep \"" + command + "\" | grep -v grep"
-        #print("hotspot: in kill, search_command = " + str(search_command))
-        check = shell(search_command)
-        #print("hotspot: check: " + str(check))
-
-        if check != "":
-            #print("hotspot: Process was already running. Cleaning it up.")
-
-            old_pid = check.split(" ")[0]
-            #print("- hotspot: old PID: " + str(old_pid))
-            if old_pid != None:
-                os.system("sudo kill " + old_pid)
-                #print("- hotspot: old process has been asked to stop")
-                time.sleep(1)
-        
-
-            
-    except Exception as ex:
-        pass

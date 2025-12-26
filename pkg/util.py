@@ -267,3 +267,41 @@ def arpa_detect_gateways(quick=True):
         
     return gateway_list
     
+
+
+
+def shell(command):
+    #print("HOTSPOT SHELL COMMAND = " + str(command))
+    shell_check = ""
+    try:
+        shell_check = subprocess.check_output(command, shell=True)
+        shell_check = shell_check.decode("utf-8")
+        shell_check = shell_check.strip()
+    except:
+        pass
+    return shell_check 
+        
+
+
+def kill(command):
+    check = ""
+    try:
+        search_command = "ps ax | grep \"" + command + "\" | grep -v grep"
+        #print("hotspot: in kill, search_command = " + str(search_command))
+        check = shell(search_command)
+        #print("hotspot: check: " + str(check))
+
+        if check != "":
+            #print("hotspot: Process was already running. Cleaning it up.")
+
+            old_pid = check.split(" ")[0]
+            #print("- hotspot: old PID: " + str(old_pid))
+            if old_pid != None:
+                os.system("sudo kill " + old_pid)
+                #print("- hotspot: old process has been asked to stop")
+                time.sleep(1)
+        
+
+            
+    except Exception as ex:
+        pass
