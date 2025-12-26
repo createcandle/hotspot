@@ -253,7 +253,7 @@
 
 			document.getElementById('extension-hotspot-tab-button-timers').addEventListener('click', (event) => {
 				//console.log(event);
-				this.regenerate_items();
+				this.get_latest();
 				document.getElementById('extension-hotspot-content').classList = ['extension-hotspot-show-tab-timers'];
 			});
 			document.getElementById('extension-hotspot-tab-button-satellites').addEventListener('click', (event) => {
