@@ -1697,7 +1697,7 @@ rsn_pairwise=CCMP"""
         
         self.save_persistent_data()
         self.running = False
-        if self.nmcli_installed == False && self.hostapd_installed == True:
+        if self.nmcli_installed == False and self.hostapd_installed == True:
             for pid in self.child_pids:
                 if self.DEBUG:
                     print("- killing pid: " + str(pid))
