@@ -33,7 +33,6 @@ from subprocess import call, Popen
 from gateway_addon import Database, Adapter
 from .util import *
 from .hotspot_device import *
-#from .hotspot_notifier import *
 
 try:
     #from gateway_addon import APIHandler, APIResponse
