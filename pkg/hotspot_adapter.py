@@ -1503,8 +1503,8 @@ rsn_pairwise=CCMP"""
             if not 'animals' in self.persistent_data:
                 self.persistent_data['animals'] = {}
 
-			if not str(new_device['mac']) in self.persistent_data['animals']:
-				self.persistent_data['animals'][str(new_device['mac'])] = {}
+            if not str(new_device['mac']) in self.persistent_data['animals']:
+                self.persistent_data['animals'][str(new_device['mac'])] = {}
 				
             self.persistent_data['animals'][str(new_device['mac'])]['mac'] = new_device['mac']
             self.persistent_data['animals'][str(new_device['mac'])]['nicename'] = new_device['nicename']
