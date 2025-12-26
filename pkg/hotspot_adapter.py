@@ -474,7 +474,7 @@ class HotspotAdapter(Adapter):
         hostapd_command = "sudo /usr/sbin/hostapd -B " + self.hostapd_conf_file_path
         time_server_command = "sudo python3 " + self.time_server_file_path + " 192.168.12.1 123"
 
-        if self.nmcli_installed == False:
+        if self.nmcli_installed == False and self.hostapd_installed == True:
             kill(time_server_command)
             if self.time_server:
                 if self.DEBUG:
@@ -534,7 +534,7 @@ class HotspotAdapter(Adapter):
             #    print("disabling wifi power saving")
             #os.system("sudo iw dev wlan0 set power_save off")
 
-        if self.nmcli_installed == False:
+        if self.nmcli_installed == False and self.hostapd_installed == True:
             while self.running:
                 time.sleep(1)
                 if self.allow_launch:
@@ -607,7 +607,7 @@ class HotspotAdapter(Adapter):
             unblock_countdown -= 1
             if unblock_countdown < 1:
                 unblock_countdown = 30
-                if self.nmcli_installed == False:
+                if self.nmcli_installed == False and self.hostapd_installed == True:
                     os.system('sudo pkill wpa_supplicant')
                 # it's strange that this is needed.. but it works. Thanks to https://github.com/RaspAP/raspap-webgui/issues/200
                 
@@ -792,7 +792,7 @@ class HotspotAdapter(Adapter):
             if self.DEBUG:
                 print("hotspot addon will not start hostapd, as nmcli is installed")
             return
-            
+        
         if self.ip_address == None:
             if self.DEBUG:
                 print("Error, no valid IP address. Will not start hotspot (hostapd)")
@@ -802,8 +802,7 @@ class HotspotAdapter(Adapter):
             if self.DEBUG:
                 print("aborting start_hostapd on Mac OS")
             return
-            
-            
+        
         if self.hostapd_available == False:
             if self.DEBUG:
                 print("aborting start_hostapd as hostapd does not seem to be installed")
