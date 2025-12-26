@@ -77,11 +77,13 @@ class HotspotAPIHandler(APIHandler):
         """
         if self.DEBUG:
             print("> > >  REQUEST < < <")
+            print("> request.method: ", request.method)
+            
         try:
         
             if request.method != 'POST':
                 if self.DEBUG:
-                    print("- was POST request, ignoring")
+                    print("- was not a POST request, ignoring")
                 return APIResponse(status=404)
             
             if request.path == '/ajax':
