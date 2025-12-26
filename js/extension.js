@@ -282,7 +282,6 @@
 				{'action':'init'}
 
 	        ).then((body) => {
-				console.log("hotspot init response: ", body);
                 
                 if(typeof body.debug == 'boolean'){
                     this.debug = body.debug;
