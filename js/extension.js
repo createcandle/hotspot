@@ -671,10 +671,12 @@
                                                 option.text = select_options[i];
                                                 if (select_options[i] ==  'blocked' && this.master_blocklist.indexOf(domain) >= 0) {
                                                     option.selected = true;
+													select.classList.add('extension-hotspot-select-permission-blocked');
                                                 }
                                                 else if( select_options[i] == this.animals[mac]['domains'][domain]['permission'] ){
                                                     //console.log("setting selected option");
                                                     option.selected = true;
+													select.classList.add('extension-hotspot-select-permission-blocked');
                                                 }
                                                 select.appendChild(option);
                                                 
