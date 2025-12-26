@@ -191,7 +191,7 @@ class HotspotAdapter(Adapter):
         # Make sure the hosts directory exists
         try:
             if not os.path.isdir(self.dnsmasq_hosts_dir_path):
-                os.system("cp -R " + self.dnsmasq_addon_hosts_dir_path + " " + self.dnsmasq_hosts_dir_path )
+                os.system("cp -R " + str(self.dnsmasq_addon_hosts_dir_path) + " " + str(self.dnsmasq_hosts_dir_path) )
                 #os.mkdir( self.dnsmasq_hosts_dir_path )
                 print("hosts directory did not exist, copied the built-in files")
         except:
@@ -1410,7 +1410,10 @@ rsn_pairwise=CCMP"""
             else:
                 if self.DEBUG:
                     print("whoa, got a request from a mysterious ip")
-            
+            	if ip.startswith('192.168.12.'):
+					arp_mac = run_command("arp -a -i uap0 | grep " + str(ip) + " | cut -f4 -' '")
+					if ':' in arp_mac:
+						self.persistent_data['ip_to_mac'][new_ip] = arp_mac;
             
     def parse_dhcp(self):
         if self.DEBUG:
