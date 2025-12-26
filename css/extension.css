@@ -708,6 +708,5 @@
 
 
 .extension-hotspot-domains-permission-select.extension-hotspot-select-permission-blocked{
-	border:1px solid red;
-	opacity:.5;
+	box-shadow: inset 0 0 50px red;
 }
