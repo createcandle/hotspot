@@ -294,12 +294,16 @@
                 }
 				
 				if(typeof body.nmcli_installed == 'boolean' && body.nmcli_installed == true){
-                    
+                    if(this.debug){
+                        console.log("hotspot debug: nmcli_installed is true ");
+                    }
+					this.launched = true;
+					
 					// Get latest list
                     this.get_latest();
 					
-                    this.launched = true;
-                    this.regenerate_items();
+                    
+                    //this.regenerate_items();
 					
 				}
                 else if(typeof body.cable_needed == 'boolean' && typeof body.hostapd_installed == 'boolean' && body.hostapd_installed == true){ // Cable needed?
