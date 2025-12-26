@@ -104,6 +104,7 @@ class HotspotAPIHandler(APIHandler):
                                           'password':self.adapter.hotspot_password, 
                                           'cable_needed':self.adapter.cable_needed, 
                                           'nmcli_installed':self.adapter.nmcli_installed,
+                                          'hostapd_installed':self.adapter.hostapd_installed,
                                           'debug': self.DEBUG
                                           }),
                     )

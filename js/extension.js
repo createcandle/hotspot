@@ -300,7 +300,7 @@
                     this.regenerate_items();
 					
 				}
-                else if(typeof body.cable_needed == 'boolean'){ // Cable needed?
+                else if(typeof body.cable_needed == 'boolean' && typeof body.hostapd_installed == 'boolean' && body.hostapd_installed == true){ // Cable needed?
 				    
 					if(body.cable_needed){
                         this.cable_needed = body.cable_needed;
