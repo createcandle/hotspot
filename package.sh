@@ -6,8 +6,7 @@ version=$(grep '"version"' manifest.json | cut -d: -f2 | cut -d\" -f2)
 [ $(id -u) = 0 ] && umask 0
 
 # Clean up from previous releases
-echo "removing old files"
-rm -rf *.tgz *.sha256sum package SHA256SUMS lib
+rm -rf *.tgz *.sha256sum package SHA256SUMS
 
 if [ -z "${ADDON_ARCH}" ]; then
   TARFILE_SUFFIX=
@@ -17,15 +16,15 @@ else
 fi
 
 
-# Prep new package
-echo "creating package"
 mkdir -p lib package
 
 # Pull down Python dependencies
-pip3 install -r requirements.txt -t lib --no-binary :all: --prefix ""
+pip3 install -r requirements.txt -t lib --no-binary :all: --prefix "" --no-cache-dir
+
+# in future this command should use: --use-pep517
 
 # Put package together
-cp -r lib pkg LICENSE manifest.json *.py README.md js images css views hosts package/
+cp -r pkg lib LICENSE *.json *.py *.sh README.md css images js views hosts package/
 find package -type f -name '*.pyc' -delete
 find package -type f -name '._*' -delete
 find package -type d -empty -delete
@@ -40,10 +39,9 @@ cd -
 # Make the tarball
 echo "creating archive"
 TARFILE="hotspot-${version}${TARFILE_SUFFIX}.tgz"
+echo "TARFILE: $TARFILE"
 tar czf ${TARFILE} package
 
 echo "creating shasums"
 shasum --algorithm 256 ${TARFILE} > ${TARFILE}.sha256sum
 cat ${TARFILE}.sha256sum
-#sha256sum ${TARFILE}
-#rm -rf SHA256SUMS package
