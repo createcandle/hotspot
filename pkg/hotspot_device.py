@@ -22,7 +22,7 @@ class HotspotDevice(Device):
 
         self.name = 'hotspot'
         self.title = 'Hotspot'
-        self.description = 'Manage the Hotspot add-on'
+        self.description = 'Details from the Hotspot add-on'
         self._type = ['OnOffSwitch']
         self.connected = False
         
@@ -84,6 +84,16 @@ class HotspotDevice(Device):
                                 'readOnly': True
                             },
                             False )
+                            
+            self.properties["activity"] = HotspotProperty(
+                            self,
+                            "activity",
+                            {
+                                'title': "Activity",
+                                'type': 'integer',
+                                'readOnly': True
+                            },
+                            0)
             
             """
             self.properties["count"] = HotspotProperty(

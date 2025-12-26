@@ -1,6 +1,6 @@
 {
   "author": "CandleSmartHome.com",
-  "description": "Let your Raspberry Pi generate a wifi hotspot. Connect your wifi-based smart home devices to this hotspot to stop them from connecting to the internet without your permission.",
+  "description": "Connect your wifi-based smart home devices to the Candle hotspot, and stop them from connecting to internet servers without your permission.",
   "content_scripts": [
     {
       "css": [
@@ -39,16 +39,16 @@
     "schema": {
       "properties": {
         "Hotspot name": {
-            "description": "The name of the wifi hotspot.",
+            "description": "Deprecated. The name of the wifi hotspot.",
             "type": "string"
         },
         "Hotspot password": {
-            "description": "The password for the wifi hotspot.",
+            "description": "Deprecated. The password for the wifi hotspot.",
             "type": "string",
 			"writeOnly": true
         },
 		"Country": {
-          "description": "To comply with Wi-Fi regulations please select the country you are operating this hotspot in. This determines which Wi-Fi channels will be used.",
+          "description": "Deprecated. To comply with Wi-Fi regulations please select the country you are operating this hotspot in. This determines which Wi-Fi channels will be used.",
           "type": "string",
 		  "enum": [
 			  "Algeria",
@@ -145,11 +145,11 @@
           "type": "boolean"
         },
         "Time server": {
-          "description": "Your devices may want to incessantly ask for the time to various time servers, effectively revealing your IP address to those server. If you enable this option, all those requests will be handled by this server intead, through some redirection.",
+          "description": "Deprecated. Your devices may want to incessantly ask for the time to various time servers, effectively revealing your IP address to those server. If you enable this option, all those requests will be handled by this server intead, through some redirection.",
           "type": "boolean"
         },
         "Skip network check": {
-          "description": "Advanced. If enabled, your Candle Controller will no longer check if it has a network connection when it boots up. If your controller has no connection, then the Hotspot addon will still create its own wifi signal. Connecting to that will then be your only way to access the gateway (at least until you connect a network cable). The upside is that it allows the controller to start even if there is no other network router available.",
+          "description": "Advanced. Deprecated. If enabled, your Candle Controller will no longer check if it has a network connection when it boots up. If your controller has no connection, then the Hotspot addon will still create its own wifi signal. Connecting to that will then be your only way to access the gateway (at least until you connect a network cable). The upside is that it allows the controller to start even if there is no other network router available.",
           "type": "boolean"
         },
         "Debugging": {
@@ -157,11 +157,7 @@
           "type": "boolean"
         }
       },
-      "required": [
-	    "Hotspot name",
-		"Hotspot password",
-		"Country"
-      ],
+      "required": [],
       "type": "object"
     }
   },

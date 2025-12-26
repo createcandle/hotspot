@@ -416,6 +416,8 @@ class HotspotAdapter(Adapter):
         if os.path.exists('/sys/class/net/eth0/operstate'):
             eth0_operstate = run_command('cat /sys/class/net/eth0/operstate')
             if str(eth0_operstate).strip() == 'down':
+                if self.DEBUG:
+                    print("No ethernet cable connected")
                 self.cable_needed = True    
             
         
@@ -558,7 +560,10 @@ class HotspotAdapter(Adapter):
                 with open('/home/pi/dnsmasq_now.txt') as dnsmasq_now_f:
                     dnsmasq_now_lines = dnsmasq_now_f.readlines()
                 os.path.unlink('/home/pi/dnsmasq_now.txt')
-                    
+            
+            
+            self.devices['hotspot'].properties['activity'].update(len(dnsmasq_now_lines))
+            
             if len(dnsmasq_now_lines):
                 for line in dnsmasq_now_lines:
                     self.parse_dnsmasq(line)
