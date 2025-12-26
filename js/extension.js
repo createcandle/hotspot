@@ -398,7 +398,7 @@
 
 			        ).then((body) => {
 						if(this.debug){
-                            console.log("Hotspot Python API /latest result:");
+                            console.log("Hotspot debug: Python API /latest result:");
     						console.log(body);
 						}
                         
