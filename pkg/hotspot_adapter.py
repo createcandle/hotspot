@@ -20,6 +20,7 @@ import time
 #import queue
 #import signal
 import socket
+from signal import SIGHUP
 #import asyncio
 import logging
 import requests
@@ -1573,7 +1574,7 @@ rsn_pairwise=CCMP"""
             if self.DEBUG:
                 print("saved master_blocklist hosts file : " + str(self.master_blocklist_file_path))
 
- 
+ 		os.system("sudo kill -s HUP $(pidof dnsmasq)")
  
  
  
