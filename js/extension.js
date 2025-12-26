@@ -257,7 +257,7 @@
 				document.getElementById('extension-hotspot-content').classList = ['extension-hotspot-show-tab-timers'];
 			});
 			document.getElementById('extension-hotspot-tab-button-satellites').addEventListener('click', (event) => {
-				this.regenerate_items();
+				this.get_latest();
 				document.getElementById('extension-hotspot-content').classList = ['extension-hotspot-show-tab-satellites'];
 			});
 			document.getElementById('extension-hotspot-tab-button-tutorial').addEventListener('click', (event) => {
