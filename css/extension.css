@@ -707,7 +707,7 @@
 }
 
 
-.extension-hotspot-domains-permission-select[data-value="blocked"]{
+.extension-hotspot-domains-permission-select.extension-hotspot-select-blocked{
 	border:1px solid red;
 	opacity:.5;
 }
