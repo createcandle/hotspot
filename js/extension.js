@@ -680,8 +680,30 @@
                                                 
                                                 
                                     }
-                                    
-                                    domain_clone.querySelectorAll( '.extension-hotspot-domain-permission' )[0].appendChild(select);
+
+									select.addEventListener("change", (event) => {
+										event.stopImmediatePropagation();
+										var target = event.currentTarget;
+										if(target){
+											window.API.postJson(
+	                							`/extensions/${this.id}/api/ajax`,
+	                							{'action':'set_permission','domain':target.dataset.domain, 'permission':target.value, 'mac':target.dataset.mac}
+	                						).then((body) => { 
+	                							//console.log("update permission reaction: ");
+	                							//console.log(body); 
+	                							if( body['state'] != true ){
+	                								//pre.innerText = body['message'];
+													console.error("update_permission returned untrue.  body: ", body);
+	                							}
+	
+	                						}).catch((err) => {
+	                							console.error("hotspot: error in save items handler: ", err);
+	                							//pre.innerText = e.toString();
+	                						});
+										}
+									});
+									
+                                    domain_clone.querySelector( '.extension-hotspot-domain-permission' ).appendChild(select);
                                     
                                     /*
                 					const permission_select = clone.querySelectorAll('.extension-hotspot-domains-permission-select')[0];
