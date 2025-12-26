@@ -1557,7 +1557,7 @@ rsn_pairwise=CCMP"""
     def update_dnsmasq(self):
         if self.DEBUG:
             print("in update dnsmasq")
-        if self.dnsmasq_pid == None:
+        if self.dnsmasq_pid == None and self.nmcli_installed == False and self.hostapd_installed == True:
             print("no dnsmasq PID!")
             # https://serverfault.com/questions/723292/dnsmasq-doesnt-automatically-reload-when-entry-is-added-to-etc-hosts
             return
