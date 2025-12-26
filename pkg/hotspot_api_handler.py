@@ -210,7 +210,7 @@ class HotspotAPIHandler(APIHandler):
                         self.adapter.persistent_data['master_blocklist'].remove(domain)
                         self.adapter.update_dnsmasq()
                         
-                        if self.adapter.dnsmasq_pid != None:
+                        if self.adapter.dnsmasq_pid != None and self.adapter.nmcli_installed == False and self.adapter.hostapd_installed == True:
                             if self.DEBUG:
                                 print("sending sighup to " + str(self.adapter.dnsmasq_pid))
                             #os.kill(self.adapter.dnsmasq_pid, SIGHUP)
