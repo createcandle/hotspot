@@ -103,6 +103,7 @@ class HotspotAPIHandler(APIHandler):
                                           'ssid':self.adapter.ssid, 
                                           'password':self.adapter.hotspot_password, 
                                           'cable_needed':self.adapter.cable_needed, 
+                                          'nmcli_installed':self.adapter.nmcli_installed,
                                           'debug': self.DEBUG
                                           }),
                     )
