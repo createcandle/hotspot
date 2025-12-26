@@ -282,7 +282,7 @@
 	        ).then((body) => {
 				//console.log("hotspot init response: ", body);
                 
-                if(typeof body.debug !='undefined'){
+                if(typeof body.debug != 'undefined'){
                     this.debug = body.debug;
     			    if(body.debug){
                         console.log("hotspot init response: ", body);
