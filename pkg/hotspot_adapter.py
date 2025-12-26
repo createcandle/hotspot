@@ -413,12 +413,18 @@ class HotspotAdapter(Adapter):
  
         # Connected via ethernet?
         
-        if self.DEBUG:
-            print("ethernet_state: " + str(self.ethernet_state))
-        if 'down' in str(self.ethernet_state) and self.use_without_cable == False:
-            if self.DEBUG:
-                print("No ethernet, and Hotspot may not run without an ethernet connection. Stopping.")
-            self.cable_needed = True    
+        if os.path.exists('/sys/class/net/eth0/operstate'):
+            eth0_operstate = run_command('cat /sys/class/net/eth0/operstate')
+            if str(eth0_operstate).strip() == 'down':
+                self.cable_needed = True    
+            
+        
+        #if self.DEBUG:
+        #    print("ethernet_state: " + str(self.ethernet_state))
+        #if 'down' in str(self.ethernet_state) and self.use_without_cable == False:
+        #    if self.DEBUG:
+        #        print("No ethernet, and Hotspot may not run without an ethernet connection. Stopping.")
+        #    self.cable_needed = True    
 
 
         # If the file was detected, and if the configuration says to skip,
@@ -440,9 +446,7 @@ class HotspotAdapter(Adapter):
 
 
         
-        # Only continue if there is an ethernet cable plugged in (unless the user has overridden this)
-        if self.cable_needed:
-            return
+        
         
         
         # starting time server
@@ -501,6 +505,10 @@ class HotspotAdapter(Adapter):
 
             
         self.ready = True
+        
+        # Only continue if there is an ethernet cable plugged in (unless the user has overridden this)
+        if self.cable_needed:
+            return
 
         #if self.allow_launch:
             #if self.DEBUG:
