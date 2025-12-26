@@ -1410,7 +1410,7 @@ rsn_pairwise=CCMP"""
             else:
                 if self.DEBUG:
                     print("whoa, got a request from a mysterious ip")
-				if ip.startswith('192.168.12.'):
+                if ip.startswith('192.168.12.'):
 					arp_mac = run_command("arp -a -i uap0 | grep " + str(ip) + " | cut -f4 -' '")
 					if valid_mac(str(arp_mac)):
 						self.persistent_data['ip_to_mac'][ip] = str(arp_mac)
