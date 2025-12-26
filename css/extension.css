@@ -707,3 +707,6 @@
 }
 
 
+.extension-hotspot-domains-permission-select[value="blocked"]{
+	border:1px solid red;
+}
