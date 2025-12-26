@@ -129,6 +129,13 @@ class HotspotAdapter(Adapter):
         self.time_server_file_path = os.path.join(self.addon_path, "time_server.py")
         
         
+        self.is_mac = False
+        # Ugly fix for issue with Candle 2.0.2.
+        if sys.platform == 'darwin':
+            print("RUNNING ON MAC OS")
+            self.is_mac = True
+            
+        
         self.boot_path = '/boot'
         if os.path.exists('/boot/firmware'):
             self.boot_path = '/boot/firmware'
@@ -781,6 +788,10 @@ class HotspotAdapter(Adapter):
                 print("Error, no valid IP address. Will not start hotspot (hostapd)")
             return
         
+        if self.is_mac:
+            if self.DEBUG:
+                print("aborting start_hostapd on Mac OS")
+            return
         
         self.send_pairing_prompt( "Creating Hotspot" )
         
