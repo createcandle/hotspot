@@ -17,10 +17,10 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lib'))
 import re
 import json
 import time
-import queue
-import signal
+#import queue
+#import signal
 import socket
-import asyncio
+#import asyncio
 import logging
 import requests
 import threading
@@ -91,6 +91,12 @@ class HotspotAdapter(Adapter):
         if nmcli_check != None:
             if str(nmcli_check).startswith('/') and str(nmcli_check).endswith('/nmcli'):
                 self.nmcli_installed = True
+
+		self.hostapd_installed = False
+        hostapd_check = run_command('which hostapd')
+        if hostapd_check != None:
+            if str(hostapd_check).startswith('/') and str(hostapd_check).endswith('/hostapd'):
+                self.hostapd_installed = True
         
         self.previous_dnsmasq_now = ''
         
@@ -488,7 +494,6 @@ class HotspotAdapter(Adapter):
         if self.DEBUG:
             print("Starting the internal clock")
         try:
-            #self.t = threading.Thread(target=self.clock, args=(self.voice_messages_queue,))
             self.t = threading.Thread(target=self.clock)
             self.t.daemon = True
             self.t.start()
@@ -1693,7 +1698,7 @@ rsn_pairwise=CCMP"""
         
         self.save_persistent_data()
         self.running = False
-        if self.nmcli_installed == False:
+        if self.nmcli_installed == False && self.hostapd_installed == True:
             for pid in self.child_pids:
                 if self.DEBUG:
                     print("- killing pid: " + str(pid))
