@@ -92,7 +92,7 @@ class HotspotAdapter(Adapter):
             if str(nmcli_check).startswith('/'):
                 self.nmcli_installed = True
 
-		self.hostapd_installed = False
+        self.hostapd_installed = False
         hostapd_check = run_command('which hostapd')
         if hostapd_check != None:
             if str(hostapd_check).startswith('/'):
