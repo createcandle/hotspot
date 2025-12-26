@@ -1411,16 +1411,16 @@ rsn_pairwise=CCMP"""
                 if self.DEBUG:
                     print("whoa, got a request from a mysterious ip")
                 if ip.startswith('192.168.12.'):
-					arp_mac = run_command("arp -a -i uap0 | grep " + str(ip) + " | cut -f4 -' '")
-					if valid_mac(str(arp_mac)):
-						self.persistent_data['ip_to_mac'][ip] = str(arp_mac)
-						self.persistent_data['animals'][str(arp_mac)] = {}
+                    arp_mac = run_command("arp -a -i uap0 | grep " + str(ip) + " | cut -f4 -' '")
+                    if valid_mac(str(arp_mac)):
+                        self.persistent_data['ip_to_mac'][ip] = str(arp_mac)
+                        self.persistent_data['animals'][str(arp_mac)] = {}
 
-						self.persistent_data['animals'][str(arp_mac)]['mac'] = str(arp_mac)
-						self.persistent_data['animals'][str(arp_mac)]['nicename'] = "Unknown name"
-						self.persistent_data['animals'][str(arp_mac)]['ip'] = str(ip)
-						self.persistent_data['animals'][str(arp_mac)]['vendor'] = "Unknown vendor"
-						self.persistent_data['animals'][str(arp_mac)]['dhcp_timestamp'] = time.time()
+                        self.persistent_data['animals'][str(arp_mac)]['mac'] = str(arp_mac)
+                        self.persistent_data['animals'][str(arp_mac)]['nicename'] = "Unknown name"
+                        self.persistent_data['animals'][str(arp_mac)]['ip'] = str(ip)
+                        self.persistent_data['animals'][str(arp_mac)]['vendor'] = "Unknown vendor"
+                        self.persistent_data['animals'][str(arp_mac)]['dhcp_timestamp'] = time.time()
            
             
     def parse_dhcp(self):
