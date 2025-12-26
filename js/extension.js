@@ -687,6 +687,13 @@
 										event.stopImmediatePropagation();
 										var target = event.currentTarget;
 										if(target){
+if(target.value == 'blocked'){
+											select.classList.add('extension-hotspot-select-permission-blocked');
+}
+else{
+select.classList.remove('extension-hotspot-select-permission-blocked');
+}
+
 											window.API.postJson(
 	                							`/extensions/${this.id}/api/ajax`,
 	                							{'action':'set_permission','domain':target.dataset.domain, 'permission':target.value, 'mac':target.dataset.mac}
