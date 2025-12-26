@@ -89,13 +89,13 @@ class HotspotAdapter(Adapter):
         self.nmcli_installed = False
         nmcli_check = run_command('which nmcli')
         if nmcli_check != None:
-            if str(nmcli_check).startswith('/') and str(nmcli_check).endswith('/nmcli'):
+            if str(nmcli_check).startswith('/'):
                 self.nmcli_installed = True
 
 		self.hostapd_installed = False
         hostapd_check = run_command('which hostapd')
         if hostapd_check != None:
-            if str(hostapd_check).startswith('/') and str(hostapd_check).endswith('/hostapd'):
+            if str(hostapd_check).startswith('/'):
                 self.hostapd_installed = True
         
         self.previous_dnsmasq_now = ''
@@ -576,7 +576,7 @@ class HotspotAdapter(Adapter):
             if os.path.exists('/home/pi/dnsmasq_now.txt'):
                 with open('/home/pi/dnsmasq_now.txt') as dnsmasq_now_f:
                     dnsmasq_now_lines = dnsmasq_now_f.readlines()
-                os.path.unlink('/home/pi/dnsmasq_now.txt')
+                os.remove('/home/pi/dnsmasq_now.txt')
             
             
             self.devices['hotspot'].properties['activity'].update(len(dnsmasq_now_lines))
