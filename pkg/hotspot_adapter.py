@@ -135,6 +135,11 @@ class HotspotAdapter(Adapter):
             print("RUNNING ON MAC OS")
             self.is_mac = True
             
+        self.hostapd_available = False
+        hostapd_check = run_command('which hostapd')
+        if str(hostapd_check).startswith('/') and str(hostapd_check).endswith('/hostapd'):
+            self.hostapd_available = True    
+            
         
         self.boot_path = '/boot'
         if os.path.exists('/boot/firmware'):
@@ -791,6 +796,12 @@ class HotspotAdapter(Adapter):
         if self.is_mac:
             if self.DEBUG:
                 print("aborting start_hostapd on Mac OS")
+            return
+            
+            
+        if self.hostapd_available == False:
+            if self.DEBUG:
+                print("aborting start_hostapd as hostapd does not seem to be installed")
             return
         
         self.send_pairing_prompt( "Creating Hotspot" )
