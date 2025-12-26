@@ -286,7 +286,7 @@
                 if(typeof body.debug == 'boolean'){
                     this.debug = body.debug;
     			    if(body.debug){
-                        console.log("hotspot init response: ", body);
+                        console.log("hotspot debug: init response: ", body);
     			        document.getElementById('extension-hotspot-debug-warning').classList.remove('extension-hotspot-hidden');
                         document.getElementById('extension-hotspot-response').classList.remove('extension-hotspot-hidden');
     			    }
