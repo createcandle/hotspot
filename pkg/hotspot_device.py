@@ -191,7 +191,7 @@ class HotspotProperty(Property):
 
     def update(self, value):         
         if self.device.adapter.DEBUG:
-            print("property -> update. Value = " + str(value))
+            print("hotspot debug: property -> update. Value = " + str(value))
         
         if value != self.value:
             
