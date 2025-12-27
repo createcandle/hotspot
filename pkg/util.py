@@ -16,7 +16,7 @@ import subprocess
 def get_own_mac(interface):
 
   try:
-    mac = open('/sys/class/net/'+interface+'/address').readline()
+    mac = open('/sys/class/net/' + str(interface) + '/address').readline()
   except:
     mac = "00:00:00:00:00:00"
 
