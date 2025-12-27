@@ -576,10 +576,12 @@ class HotspotAdapter(Adapter):
             
             dnsmasq_now_lines = []
             if os.path.exists('/home/pi/dnsmasq_now.txt'):
-                with open('/home/pi/dnsmasq_now.txt') as dnsmasq_now_f:
-                    dnsmasq_now_lines = dnsmasq_now_f.readlines()
-                os.remove('/home/pi/dnsmasq_now.txt')
-            
+				try:
+                	with open('/home/pi/dnsmasq_now.txt') as dnsmasq_now_f:
+                    	dnsmasq_now_lines = dnsmasq_now_f.readlines()
+                	os.remove('/home/pi/dnsmasq_now.txt')
+				except Exception as ex:
+					print('caught error trying to load or remove /home/pi/dnsmasq_now.txt: ' + str(ex))
             
             self.devices['hotspot'].properties['activity'].update(len(dnsmasq_now_lines))
             
