@@ -31,7 +31,7 @@ def get_own_hostname():
         return hostname
     except Exception as ex:
         print("Error while checking own hostname! Will default to 'gateway'. Error was: " + str(ex) )
-        return "gateway"
+        return "candle"
 
 
 def get_own_ip():
