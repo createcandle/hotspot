@@ -203,6 +203,6 @@ class HotspotProperty(Property):
             self.device.notify_property_changed(self)
             if self.device.adapter.DEBUG:
                 print("property updated to new value")
-        else:
-            if self.device.adapter.DEBUG:
-                print("property was already that value")
+        #else:
+        #    if self.device.adapter.DEBUG:
+        #        print("property was already that value")
