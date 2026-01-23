@@ -153,11 +153,13 @@ class HotspotAdapter(Adapter):
         
         if os.path.isfile(self.boot_path + "/nohotspot.txt"):
             print("nohotspot.txt file spotted on SD card, so hotspot addon will not launch.")
-            return
+            if self.nmcli_installed == False:
+                return
             
         if os.path.isfile(self.boot_path + "/candle_no_hotspot.txt"):
             print("candle_no_hotspot.txt file spotted on SD card, so hotspot addon will not launch.")
-            return
+            if self.nmcli_installed == False:
+                return
         
         # skip the 90 second wait a bit during development:
         jump45 = os.path.join(self.user_profile['addonsDir'], self.addon_name, "jump45")
@@ -173,6 +175,7 @@ class HotspotAdapter(Adapter):
         if os.path.isfile(jump88):
             self.seconds = 88
 
+        self.still_using_default_password = False
 
         # Detect the network check override command. if present the hotspot can start even if the device has no network connection, making it fully stand-alone.
         self.skip_network_file_detected = False
@@ -244,6 +247,11 @@ class HotspotAdapter(Adapter):
         self.hotspot_name = "Candle"
         self.hotspot_password = "iloveprivacy"
         self.ip_address = None
+        
+        if self.nmcli_installed == True:
+            self.hotspot_password = ""
+        
+        
         
         self.wifi_country_codes_table = {
                     "Algeria":"DZ",
@@ -390,6 +398,11 @@ class HotspotAdapter(Adapter):
         except Exception as ex:
             print("Error loading config: " + str(ex))
 			
+        
+        self.check_if_still_using_default_password()
+        
+        
+            
         #
         # Create UI
         #
@@ -561,7 +574,25 @@ class HotspotAdapter(Adapter):
                         print("Error in dnsmasq loop: " + str(ex))
                 
 
-                
+    def check_if_still_using_default_password(self):
+        current_password = ''
+        
+        if self.nmcli_installed == True:
+            password_file_path = self.boot_path + "/candle_hotspot_password.txt"
+            if os.path.isfile(password_file_path):
+                current_password = run_command('cat ' + str(password_file_path))
+                current_password = str(current_password).rstrip()
+                if current_password == 'smarthome':
+                    self.still_using_default_password = True
+                else:
+                    self.still_using_default_password = False
+        
+        else:
+            if self.hotspot_password == 'iloveprivacy':
+                self.still_using_default_password = True
+            else:
+                self.still_using_default_password = False   
+            
                 
             
     def clock(self):
@@ -707,7 +738,7 @@ class HotspotAdapter(Adapter):
 
         # Hotspot password
         try:
-            if 'Hotspot password' in config:
+            if 'Hotspot password' in config and self.nmcli_installed == False:
                 if self.DEBUG:
                     print("-Hotspot password is present in the config data.")
                 self.hotspot_password = str(config['Hotspot password'])

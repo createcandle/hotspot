@@ -268,7 +268,6 @@
             //console.log("evil");
             this.get_init_data();
            
-
 		} //  end of show()
 		
 	
@@ -292,16 +291,28 @@
     			    }
                 }
 				
+				
 				if(typeof body.nmcli_installed == 'boolean' && body.nmcli_installed == true){
                     if(this.debug){
                         console.log("hotspot debug: nmcli_installed is true ");
                     }
 					this.launched = true;
 					
-					// Get latest list
-                    this.get_latest();
+					if(typeof body.still_using_default_password != 'undefined'){
+						if(body.still_using_default_password == true){
+							document.getElementById('extension-hotspot-change-password-hint').classList.remove('extension-hotspot-hidden');
+						}
+						else{
+							document.getElementById('extension-hotspot-change-password-hint').classList.add('extension-hotspot-hidden');
+						}
+					}
 					
-                    
+					if(typeof body.ssid != 'undefined'){
+					    if(body.ssid){
+					        document.getElementById('extension-hotspot-ssid').innerText = body.ssid;
+							document.getElementById('extension-hotspot-ssid-container').classList.remove('extension-hotspot-hidden');
+						}
+                    }
                     //this.regenerate_items();
 					
 				}
@@ -312,20 +323,18 @@
 				        document.getElementById('extension-hotspot-cable-tip').classList.remove('extension-hotspot-hidden');
 				    }
                     else{
-        				if(typeof body.ssid !='undefined'){
-        				    if(body.ssid){
-        				        document.getElementById('extension-hotspot-ssid').innerText = body.ssid;
-                                document.getElementById('extension-hotspot-password').innerText = body.password;
-                                document.getElementById('extension-hotspot-ssid-container').classList.remove('extension-hotspot-hidden');
-                                if(body.password == 'iloveprivacy'){
-                                    document.getElementById('extension-hotspot-change-password-hint').classList.remove('extension-hotspot-hidden');
-                                }
-        				    }
-        				}
-                        
-                        // Get latest list
-                        this.get_latest();
                 
+						if(typeof body.ssid !='undefined'){
+						    if(body.ssid){
+						        document.getElementById('extension-hotspot-ssid').innerText = body.ssid;
+		                        //document.getElementById('extension-hotspot-password').innerText = body.password;
+		                        document.getElementById('extension-hotspot-ssid-container').classList.remove('extension-hotspot-hidden');
+		                        if(body.password == 'iloveprivacy' || body.password == 'smarthome'){
+		                            document.getElementById('extension-hotspot-change-password-hint').classList.remove('extension-hotspot-hidden');
+		                        }
+						    }
+						}
+				
                         // Create the interval for the countdown timer
                         if(this.interval == null){
                 			this.interval = setInterval(function(){
@@ -348,11 +357,15 @@
                 			}.bind(this), 1000);
                         }
                         
-                        
                     }
                     
 				}
                 
+				
+                
+                // Get latest list
+                this.get_latest();
+				
                 document.getElementById('extension-hotspot-connection-error').classList.add('extension-hotspot-hidden');
     			
                 

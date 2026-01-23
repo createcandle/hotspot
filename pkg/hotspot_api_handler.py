@@ -97,6 +97,9 @@ class HotspotAPIHandler(APIHandler):
                     if self.DEBUG:
                         print('ajax handling init')
                         print("self.adapter.persistent_data = " + str(self.adapter.persistent_data))
+                        
+                    self.adapter.check_if_still_using_default_password()
+                        
                     return APIResponse(
                       status=200,
                       content_type='application/json',
@@ -104,6 +107,7 @@ class HotspotAPIHandler(APIHandler):
                                           'message':'initialization complete', 
                                           'ssid':self.adapter.ssid, 
                                           'password':self.adapter.hotspot_password, 
+                                          'still_using_default_password':self.adapter.still_using_default_password,
                                           'cable_needed':self.adapter.cable_needed, 
                                           'nmcli_installed':self.adapter.nmcli_installed,
                                           'hostapd_installed':self.adapter.hostapd_installed,
