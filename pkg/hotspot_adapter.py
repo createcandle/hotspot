@@ -425,6 +425,13 @@ class HotspotAdapter(Adapter):
         
         if self.nmcli_installed == False:
             time.sleep(3) # give the network some more time to settle
+        else:
+            
+            self.ssid = 'Candle'
+            actual_hotspot_ssid = run_command("nmcli con show Hotspot | grep 802-11-wireless.ssid | cut -d : -f 2,3 | sed 's/,*$//g' | xargs")
+            actual_hotspot_ssid = str(actual_hotspot_ssid).rstrip()
+            if actual_hotspot_ssid.startswith('Candle '):
+                self.ssid = actual_hotspot_ssid
         
         filename = "/etc/resolv.conf"
         with open(filename) as f:
