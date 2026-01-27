@@ -614,6 +614,12 @@
 }
 
 
+#extension-hotspot-change-password-hint a{
+	text-decoration:none;
+	font-weight:normal;
+}
+
+
 /*     satellites   */
 
 .extension-hotspot-select-satellites{

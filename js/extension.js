@@ -398,9 +398,13 @@
         
         
         get_latest(){
-            //console.log("hotspot: in get_latest");
+            if(this.debug){
+				console.log("hotspot: in get_latest");
+			}
             const main_view = document.getElementById('extension-hotspot-view');
             const pre = document.getElementById('extension-hotspot-response-data');
+			
+			// hotspot_connected_devices
 			
             try{
 		  		// Get list of items
@@ -447,8 +451,8 @@
 				}
                 
 			}
-            catch(e){ 
-                console.log("Hotspot polling error: ", e);
+            catch(err){ 
+                console.log("Hotspot polling error: ", err);
             }
             
         }
