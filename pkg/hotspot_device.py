@@ -190,11 +190,11 @@ class HotspotProperty(Property):
 
 
     def update(self, value):         
-        if self.device.adapter.DEBUG:
-            print("hotspot debug: property -> update.  name,value: " + str(self.name) + ", " + str(value))
+        
         
         if value != self.value:
-            
+            if self.device.adapter.DEBUG:
+                print("hotspot debug: property -> update.  name,value: " + str(self.name) + ", " + str(value))
             self.value = value
             
             #set_cached_value_and_notify
@@ -202,7 +202,7 @@ class HotspotProperty(Property):
             self.set_cached_value(value)
             self.device.notify_property_changed(self)
             if self.device.adapter.DEBUG:
-                print("property updated to new value")
+                print("hotspot: property updated to new value")
         #else:
         #    if self.device.adapter.DEBUG:
         #        print("property was already that value")
