@@ -428,7 +428,7 @@ class HotspotAdapter(Adapter):
         else:
             
             self.ssid = 'Candle'
-            actual_hotspot_ssid = run_command("nmcli con show Hotspot | grep 802-11-wireless.ssid | cut -d : -f 2,3 | sed 's/,*$//g' | xargs")
+            actual_hotspot_ssid = run_command("nmcli con show Candle_hotspot | grep 802-11-wireless.ssid | cut -d : -f 2,3 | sed 's/,*$//g' | xargs")
             actual_hotspot_ssid = str(actual_hotspot_ssid).rstrip()
             if actual_hotspot_ssid.startswith('Candle '):
                 self.ssid = actual_hotspot_ssid
@@ -458,7 +458,7 @@ class HotspotAdapter(Adapter):
             if str(eth0_operstate).strip() == 'down':
                 if self.DEBUG:
                     print("No ethernet cable connected")
-                self.cable_needed = True    
+                self.cable_needed = True
             
         
         #if self.DEBUG:
