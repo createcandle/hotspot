@@ -112,7 +112,12 @@
 				this.get_latest();
 			});
 
-            
+			document.getElementById('extension-hotspot-show-password-button').addEventListener('click', (event) => {
+				//console.log("refresh button clicked");
+				this.get_hotspot_password();
+			});
+			
+			
             
             // Abort button
 			document.getElementById('extension-hotspot-abort-button').addEventListener('click', (event) => {
@@ -213,7 +218,7 @@
           					{'action':'remove_from_master_blocklist','domain':target.dataset.domain}
           				).then((body) => { 
                             if(this.debug){
-          					    console.log("remove from blocklist response: ", body);
+          					    console.log("hotspot debug: remove from blocklist response: ", body);
                             }
           					//console.log(body); 
           					if( body['state'] != true ){
@@ -232,9 +237,9 @@
                                   }
                               }
 
-          				}).catch((e) => {
-          					//console.log("hotspot: error in remove from blocklist handler");
-          					pre.innerText = e.toString();
+          				}).catch((err) => {
+          					console.error("hotspot: error in remove from blocklist handler: ", err);
+
           				});
                     }
                 }
@@ -399,7 +404,7 @@
         
         get_latest(){
             if(this.debug){
-				console.log("hotspot: in get_latest");
+				console.log("hotspot debug: in get_latest");
 			}
             const main_view = document.getElementById('extension-hotspot-view');
             const pre = document.getElementById('extension-hotspot-response-data');
@@ -418,8 +423,7 @@
 
 			        ).then((body) => {
 						if(this.debug){
-                            console.log("Hotspot debug: Python API /latest result:");
-    						console.log(body);
+                            console.log("Hotspot debug: Python API /latest result:\n", body);
 						}
                         
 						this.attempts = 0;
@@ -440,7 +444,9 @@
 						}
 
 			        }).catch((e) => {
-			  			console.log("Error getting latest: " + e.toString());
+			  			if(this.debug){
+							console.log("Hotspot debug: error getting latest: " + e.toString());
+						}
 						//console.log(e);
 						pre.innerText = "Loading items failed - connection error";
 						this.attempts = 0;
@@ -452,11 +458,38 @@
                 
 			}
             catch(err){ 
-                console.log("Hotspot polling error: ", err);
+                if(this.debug){
+					console.log("Hotspot debug: polling error: ", err);
+				}
             }
             
         }
         
+	
+		get_hotspot_password(){
+			window.API.postJson(
+				`/extensions/hotspot/api/ajax`,
+				{'action':'get_hotspot_password'}
+			).then((body) => { 
+				if(this.debug){
+					console.log("get_hotspot_password: response body: ", body);
+				}
+				if(typeof body['value'] == 'string'){
+					const hotspot_password_el = this.view.querySelector('#extension-hotspot-password');
+					if(hotspot_password_el){
+						hotspot_password_el.textContent = body['value'];
+						const hotspot_password_button_el = this.view.querySelector('#extension-hotspot-show-password-button');
+						if(hotspot_password_button_el){
+							hotspot_password_button_el.remove();
+						}
+					}
+				}
+
+			}).catch((err) => {
+				console.error("hotspot: get_hotspot_password: caught error: ", err);
+			});
+		}
+	
 	
 	
 	

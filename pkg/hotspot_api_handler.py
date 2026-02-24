@@ -268,6 +268,23 @@ class HotspotAPIHandler(APIHandler):
                     )
                     
                     
+                elif action == 'get_hotspot_password':
+                    state = False
+                    current_hotspot_password = 'Error loading password'
+                    try:
+                        if os.path.exists(self.adapter.candle_hotspot_password_file_path):
+                            with open(self.adapter.candle_hotspot_password_file_path, "r") as file:
+                                current_hotspot_password = str(file.read()).rstrip()
+                                state = True
+                    except Exception as ex:
+                        print("get_hotspot_password: caught error reading current hotspot password from file: " + str(ex))
+                        
+                    return APIResponse(
+                      status=200,
+                      content_type='application/json',
+                      content=json.dumps({'state':state,'value':current_hotspot_password}),
+                    )
+                    
                 else:
                     return APIResponse(status=404)
                     

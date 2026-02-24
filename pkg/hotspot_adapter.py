@@ -134,6 +134,8 @@ class HotspotAdapter(Adapter):
         self.multicast_relay_file_path = os.path.join(self.addon_path, "multicast-relay.py")
         self.time_server_file_path = os.path.join(self.addon_path, "time_server.py")
         
+        self.candle_hotspot_password_file_path = '/boot/firmware/candle_hotspot_password.txt'
+        
         
         self.is_mac = False
         # Ugly fix for issue with Candle 2.0.2.

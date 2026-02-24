@@ -372,7 +372,20 @@
 #extension-hotspot-ssid{
 	display:inline-block;
 }
+#extension-hotspot-password:not(:empty){
+	display:block;
+	padding:1rem 0;
+	text-align:center;
+}
+#extension-hotspot-password:not(:empty)::before{
+	content:'Password: ';
+	font-weight:normal;
+}
 
+#extension-hotspot-show-password-button{
+    display: inline-block;
+    margin-left: 2rem;
+}
 
 /*
 .extension-hotspot-centered-page{
