@@ -369,6 +369,10 @@
     font-weight:bold;
 }
 
+#extension-hotspot-ssid{
+	display:inline-block;
+}
+
 
 /*
 .extension-hotspot-centered-page{
@@ -614,9 +618,15 @@
 }
 
 
+#extension-hotspot-change-password-hint{
+	border: 2px solid orange;
+}
+
+
 #extension-hotspot-change-password-hint a{
 	text-decoration:none;
 	font-weight:normal;
+	display:inline-block;
 }
 
 
@@ -683,6 +693,7 @@
 	.extension-hotspot-time{
 		margin-right:1rem;
 	}
+	
 }
 
 
