@@ -16,12 +16,18 @@ else
 fi
 
 
-mkdir -p lib package
+mkdir -p lib package hosts
 
 # Pull down Python dependencies
 pip3 install -r requirements.txt -t lib --no-binary :all: --prefix "" --no-cache-dir
 
 # in future this command should use: --use-pep517
+
+wget --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 -t 3 https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts -O ./hosts/StevenBlack_hosts.txt
+
+if [ -f ./hosts/StevenBlack_hosts.txt ]; then
+  grep -o '^[^#]*' ./hosts/StevenBlack_hosts.txt
+fi
 
 # Put package together
 cp -r pkg lib LICENSE *.json *.py *.sh README.md css images js views hosts package/
