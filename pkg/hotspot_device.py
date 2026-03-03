@@ -136,8 +136,8 @@ class HotspotDevice(Device):
                 
                                 
         except Exception as ex:
-            print("error adding properties: " + str(ex))
-        print("Hotspot thing has been created")
+            print("hotspot thing: caught error adding properties: " + str(ex))
+        #print("Hotspot thing has been created")
         #self.adapter.handle_device_added(self)
 
 
@@ -158,12 +158,12 @@ class HotspotProperty(Property):
         self.description = description # dictionary
         self.value = value
         self.set_cached_value(value)
-
+        self.DEBUG = self.device.adapter.DEBUG
 
     def set_value(self, value):
         #print(str(value))
         try:
-            if self.device.adapter.DEBUG:
+            if self.DEBUG:
                 print("set_value called for: " + str(self.title))
                 
             """
@@ -190,8 +190,8 @@ class HotspotProperty(Property):
 
 
     def update(self, value):         
-        if self.device.adapter.DEBUG:
-            print("hotspot debug: property -> update. Value = " + str(value))
+        if self.DEBUG:
+            print("hotspot debug: property -> update. Value = " + str(value) + " , self.title: " + str(self.title))
         
         if value != self.value:
             
@@ -201,7 +201,7 @@ class HotspotProperty(Property):
             
             self.set_cached_value(value)
             self.device.notify_property_changed(self)
-            if self.device.adapter.DEBUG:
+            if self.DEBUG:
                 print("property updated to new value")
         #else:
         #    if self.device.adapter.DEBUG:

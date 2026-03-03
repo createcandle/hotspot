@@ -137,6 +137,8 @@ class HotspotAdapter(Adapter):
         self.candle_hotspot_password_file_path = '/boot/firmware/candle_hotspot_password.txt'
         
         
+        self.previous_dnsmasq_now_lines_length = 0
+        
         self.is_mac = False
         # Ugly fix for issue with Candle 2.0.2.
         if sys.platform == 'darwin':
@@ -624,7 +626,9 @@ class HotspotAdapter(Adapter):
                     if self.DEBUG:
                         print("icaught error opening dnsmasq_now.txt: " + str(ex))
                     
-            self.devices['hotspot'].properties['activity'].update(len(dnsmasq_now_lines))
+            if len(dnsmasq_now_lines) != self.previous_dnsmasq_now_lines_length:
+                self.previous_dnsmasq_now_lines_length = len(dnsmasq_now_lines)
+                self.devices['hotspot'].properties['activity'].update(len(dnsmasq_now_lines))
             
             if len(dnsmasq_now_lines):
                 for line in dnsmasq_now_lines:
@@ -653,6 +657,8 @@ class HotspotAdapter(Adapter):
             if unblock_countdown < 1:
                 unblock_countdown = 30
                 if self.nmcli_installed == False and self.hostapd_installed == True:
+                    if self.DEBUG:
+                        print("hotspot clock: doing periodic kill of wpa_supplicant")
                     os.system('sudo pkill wpa_supplicant')
                 # it's strange that this is needed.. but it works. Thanks to https://github.com/RaspAP/raspap-webgui/issues/200
                 
@@ -1258,7 +1264,7 @@ rsn_pairwise=CCMP"""
             dhcp_check = ""
             
             dhcp_check = shell("sudo /sbin/dhcpcd -w --denyinterfaces uap0")
-            print(str(dhcp_check))
+            #print(str(dhcp_check))
             if dhcp_check == "":
                 if self.DEBUG:
                     print("starting dhcpcd with denyinterfaces for uap0")
@@ -1603,6 +1609,7 @@ rsn_pairwise=CCMP"""
     def update_dnsmasq(self):
         if self.DEBUG:
             print("in update dnsmasq")
+            
         if self.dnsmasq_pid == None and self.nmcli_installed == False and self.hostapd_installed == True:
             print("no dnsmasq PID!")
             # https://serverfault.com/questions/723292/dnsmasq-doesnt-automatically-reload-when-entry-is-added-to-etc-hosts
@@ -1639,6 +1646,9 @@ rsn_pairwise=CCMP"""
                     self.persistent_data['last_trackers_update_time'] = time.time()
                     if self.DEBUG:
                         print("Succesfully downloaded latest Steven Black blocklist")        
+                if os.path.isfile(self.steven_black_blocklist_file_path):
+                    os.system("grep -o '^[^#]*' " + str(self.steven_black_blocklist_file_path) + " > " + str(self.steven_black_blocklist_file_path))
+                
             
             else:
                 if self.DEBUG:
