@@ -297,6 +297,16 @@
                 }
 				
 				
+				if(typeof body.hotspot_enabled == 'boolean'){
+					if(body.hotspot_enabled == false){
+						document.getElementById('extension-hotspot-disabled-hint').classList.remove('extension-hotspot-hidden');
+					}
+					else{
+						document.getElementById('extension-hotspot-disabled-hint').classList.add('extension-hotspot-hidden');
+					}
+				}
+				
+				
 				if(typeof body.nmcli_installed == 'boolean' && body.nmcli_installed == true){
                     if(this.debug){
                         console.log("hotspot debug: nmcli_installed is true ");

@@ -100,6 +100,10 @@ class HotspotAPIHandler(APIHandler):
                         
                     self.adapter.check_if_still_using_default_password()
                         
+                    hotspot_enabled = False
+                    if os.path.exists('candle_hotspot.txt'):
+                        hotspot_enabled = True
+                        
                     return APIResponse(
                       status=200,
                       content_type='application/json',
@@ -111,6 +115,7 @@ class HotspotAPIHandler(APIHandler):
                                           'cable_needed':self.adapter.cable_needed, 
                                           'nmcli_installed':self.adapter.nmcli_installed,
                                           'hostapd_installed':self.adapter.hostapd_installed,
+                                          'hotspot_enabled':hotspot_enabled,
                                           'debug': self.adapter.DEBUG
                                           }),
                     )

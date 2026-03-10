@@ -631,17 +631,21 @@
 }
 
 
+#extension-hotspot-disabled-hint,
 #extension-hotspot-change-password-hint{
 	border: 2px solid orange;
 }
 
-
+#extension-hotspot-disabled-hint a,
 #extension-hotspot-change-password-hint a{
 	text-decoration:none;
 	font-weight:normal;
 	display:inline-block;
 }
 
+#extension-hotspot-disabled-hint:not(.extension-hotspot-hidden) + #extension-hotspot-change-password-hint{
+	display:none;
+}
 
 /*     satellites   */
 
