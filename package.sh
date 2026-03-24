@@ -26,7 +26,11 @@ pip3 install -r requirements.txt -t lib --no-binary :all: --prefix "" --no-cache
 wget --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 -t 3 https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts -O ./hosts/StevenBlack_hosts.txt
 
 if [ -f ./hosts/StevenBlack_hosts.txt ]; then
-  grep -o '^[^#]*' ./hosts/StevenBlack_hosts.txt > ./hosts/StevenBlack_hosts.txt
+  grep -o '^[^#]*' ./hosts/StevenBlack_hosts.txt > ./hosts/StevenBlack_hosts_cleaned.txt
+  if [ -f ./hosts/StevenBlack_hosts_cleaned.txt ]; then
+    rm ./hosts/StevenBlack_hosts.txt
+    mv ./hosts/StevenBlack_hosts_cleaned.txt ./hosts/StevenBlack_hosts.txt
+  fi
 fi
 
 # Put package together
