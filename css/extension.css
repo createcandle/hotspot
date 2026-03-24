@@ -252,7 +252,9 @@
   	background-image: url('../images/menu-icon.svg');
 }
 
-
+body:not(.developer) #extension-hotspot-response{
+	display:none;
+}
 .extension-hotspot-response-data{
 	text-align:center;
 }
