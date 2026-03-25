@@ -6,7 +6,7 @@
       		
             this.debug = false;
             
-			this.addMenuEntry('Candle Hotspot');
+			this.addMenuEntry('Hotspot');
 			
             this.interval = null;
             
