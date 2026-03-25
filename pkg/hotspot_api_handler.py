@@ -101,7 +101,7 @@ class HotspotAPIHandler(APIHandler):
                     self.adapter.check_if_still_using_default_password()
                         
                     hotspot_enabled = False
-                    if os.path.exists('candle_hotspot.txt'):
+                    if os.path.exists('/boot/firmware/candle_hotspot.txt'):
                         hotspot_enabled = True
                         
                     return APIResponse(
