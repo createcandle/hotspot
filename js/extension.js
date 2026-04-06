@@ -49,14 +49,24 @@
 			//console.log("hotspot hide called");
 			try{
                 this.attempts = 0;
-				clearInterval(this.interval);
-				//console.log("interval cleared");
+				if(this.interval){
+					clearInterval(this.interval);
+				}
                 
 			}
 			catch(e){
 				//console.log("no interval to clear? " + e);
 			}
             this.interval = null;
+			
+			try{
+                if(document.getElementById('extension-hotspot-menu-item').classList.contains('selected') == false){
+                    this.view.innerHTML = "";
+                }
+			}
+            catch(err){
+                console.error("hotspot: caught error in hide: ", err);
+            }
 		}
 		
 

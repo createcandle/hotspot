@@ -23,7 +23,7 @@ class HotspotDevice(Device):
         self.name = 'hotspot'
         self.title = 'Hotspot'
         self.description = 'Details from the Hotspot add-on'
-        self._type = ['OnOffSwitch']
+        self._type = ['BinarySensor','MotionSensor','LeakSensor']
         self.connected = False
         
         try:
@@ -56,7 +56,7 @@ class HotspotDevice(Device):
                             self,
                             "new",
                             {
-                                '@type':'OnOffProperty',
+                                '@type':'LeakProperty',
                                 'title': 'New domain',
                                 'type': 'boolean',
                                 'readOnly': True
@@ -67,7 +67,7 @@ class HotspotDevice(Device):
                             self,
                             "any",
                             {
-                                '@type':'OnOffProperty',
+                                '@type':'MotionProperty',
                                 'title': 'recent connection',
                                 'type': 'boolean',
                                 'readOnly': True
@@ -78,7 +78,7 @@ class HotspotDevice(Device):
                             self,
                             "blocked",
                             {
-                                '@type':'OnOffProperty',
+                                '@type':'BooleanProperty',
                                 'title': 'blocked connection',
                                 'type': 'boolean',
                                 'readOnly': True
