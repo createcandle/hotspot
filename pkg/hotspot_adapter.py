@@ -491,7 +491,17 @@ class HotspotAdapter(Adapter):
             print("Could not create hotspot device:" + str(ex))
 
 
-        
+        # Start the internal clock which is used to handle timers. It also receives messages from the notifier.
+        if self.DEBUG:
+            print("Starting the internal clock")
+        try:
+            self.t = threading.Thread(target=self.clock)
+            self.t.daemon = True
+            self.t.start()
+            pass
+        except:
+            print("Error starting the clock thread")
+
         
         
         
@@ -516,17 +526,7 @@ class HotspotAdapter(Adapter):
         
 
 
-        # Start the internal clock which is used to handle timers. It also receives messages from the notifier.
-        if self.DEBUG:
-            print("Starting the internal clock")
-        try:
-            self.t = threading.Thread(target=self.clock)
-            self.t.daemon = True
-            self.t.start()
-            pass
-        except:
-            print("Error starting the clock thread")
-
+        
 
             
         #time.sleep(1.34)
@@ -612,20 +612,29 @@ class HotspotAdapter(Adapter):
             
         unblock_countdown = 30
         while self.running:
-            time.sleep(1)
+            
             
             #self.previous_dnsmasq_now
             
             dnsmasq_now_lines = []
-            if os.path.exists('/home/pi/dnsmasq_now.txt'):
+            if os.path.exists('/run/dnsmasq_now.txt'):
+                try:
+                    with open('/run/dnsmasq_now.txt') as dnsmasq_now_f:
+                        dnsmasq_now_lines = dnsmasq_now_f.readlines()
+                        os.remove('/run/dnsmasq_now.txt')
+                except Exception as ex:
+                    if self.DEBUG:
+                        print("caught error opening /run/dnsmasq_now.txt: " + str(ex))
+            
+            elif os.path.exists('/home/pi/dnsmasq_now.txt'):
                 try:
                     with open('/home/pi/dnsmasq_now.txt') as dnsmasq_now_f:
                         dnsmasq_now_lines = dnsmasq_now_f.readlines()
                         os.remove('/home/pi/dnsmasq_now.txt')
                 except Exception as ex:
                     if self.DEBUG:
-                        print("icaught error opening dnsmasq_now.txt: " + str(ex))
-                    
+                        print("caught error opening /home/pi/dnsmasq_now.txt: " + str(ex))
+
             if len(dnsmasq_now_lines) != self.previous_dnsmasq_now_lines_length:
                 self.previous_dnsmasq_now_lines_length = len(dnsmasq_now_lines)
                 self.devices['hotspot'].properties['activity'].update(len(dnsmasq_now_lines))
@@ -675,7 +684,8 @@ class HotspotAdapter(Adapter):
                 if self.updating_blocklists_allowed == True:
                     if time.time() - self.trackers_update_interval_seconds > self.persistent_data['last_trackers_update_time']:
                         self.update_blocklists()
-                    
+            
+            time.sleep(1)        
                     
                     
         if self.DEBUG:

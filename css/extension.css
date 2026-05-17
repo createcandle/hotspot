@@ -318,9 +318,6 @@ body:not(.developer) #extension-hotspot-response{
     background-color:rgba(0,0,0,.1);
 }
 
-#extension-hotspot-blocklist{
-    
-}
 
 #extension-hotspot-blocklist > div{
     display:flex;
