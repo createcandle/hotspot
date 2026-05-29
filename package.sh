@@ -27,7 +27,11 @@ wget --retry-connrefused --waitretry=1 --read-timeout=20 --timeout=15 -t 3 https
 
 if [ -f ./hosts/StevenBlack_hosts.txt ]; then
   grep -o '^[^#]*' ./hosts/StevenBlack_hosts.txt > ./hosts/StevenBlack_hosts_cleaned.txt
+  
   if [ -f ./hosts/StevenBlack_hosts_cleaned.txt ]; then
+
+    #sed -i 's/fe80::1%lo0/fe80::1 lo0/g' ./hosts/StevenBlack_hosts_cleaned.txt
+  
     rm ./hosts/StevenBlack_hosts.txt
     mv ./hosts/StevenBlack_hosts_cleaned.txt ./hosts/StevenBlack_hosts.txt
   fi
