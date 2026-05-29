@@ -31,7 +31,11 @@ if [ -f ./hosts/StevenBlack_hosts.txt ]; then
   if [ -f ./hosts/StevenBlack_hosts_cleaned.txt ]; then
 
     #sed -i 's/fe80::1%lo0/fe80::1 lo0/g' ./hosts/StevenBlack_hosts_cleaned.txt
-  
+    #sed -i /fe80::1%lo0 localhost/d ./hosts/StevenBlack_hosts_cleaned.txt
+
+    if cat ./hosts/StevenBlack_hosts_cleaned.txt | grep -q '0.0.0.0 0.0.0.0'; then
+      sed -i '/0.0.0.0 0.0.0.0/,$!d' ./hosts/StevenBlack_hosts_cleaned.txt
+    fi
     rm ./hosts/StevenBlack_hosts.txt
     mv ./hosts/StevenBlack_hosts_cleaned.txt ./hosts/StevenBlack_hosts.txt
   fi
