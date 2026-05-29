@@ -162,7 +162,7 @@
     }
   },
   "short_name": "hotspot",
-  "version": "0.2.16",
+  "version": "0.2.17",
   "web_accessible_resources": [
     "css/*.css",
     "images/*.svg",
