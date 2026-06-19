@@ -386,14 +386,12 @@ class HotspotAdapter(Adapter):
             if 'ip_to_mac' not in self.persistent_data:
                 print("ip_to_mac was not in persistent data, adding it now.")
                 self.persistent_data['ip_to_mac'] = {}
-            
             if 'last_trackers_update_time' not in self.persistent_data:
                 print("last_trackers_update_time was not in persistent data, adding it now.")
                 self.persistent_data['last_trackers_update_time'] = 0
             
-                
         except Exception as ex:
-            print("Error fixing missing values in persistent data: " + str(ex))
+            print("caught error fixing missing values in persistent data: " + str(ex))
         
 
 		# LOAD CONFIG
@@ -406,7 +404,7 @@ class HotspotAdapter(Adapter):
         self.check_if_still_using_default_password()
         
         
-            
+        
         #
         # Create UI
         #
@@ -419,8 +417,6 @@ class HotspotAdapter(Adapter):
                 print("Extension API handler initiated")
         except Exception as e:
             print("Failed to start API handler (this only works on gateway version 0.10 or higher). Error: " + str(e))
-            
-        
         
             
         self.ssid = self.hotspot_name + " " + self.persistent_data['unique_id'] + "_nomap"
@@ -433,22 +429,19 @@ class HotspotAdapter(Adapter):
             
             self.ssid = 'Candle'
             actual_hotspot_ssid = run_command("nmcli con show Candle_hotspot | grep 802-11-wireless.ssid | cut -d : -f 2,3 | sed 's/,*$//g' | xargs")
-            actual_hotspot_ssid = str(actual_hotspot_ssid).rstrip()
-            if actual_hotspot_ssid.startswith('Candle '):
-                self.ssid = actual_hotspot_ssid
-        
-        filename = "/etc/resolv.conf"
-        with open(filename) as f:
-            content = f.readlines()
+            if isinstance(actual_hotspot_ssid,str):
+                self.ssid = str(actual_hotspot_ssid).rstrip()
 
-        for line in content:
+        resolv_content = str(run_command('cat /etc/resolv.conf | grep nameserver'))
+        
+        for line in resolv_content.splitlines():
             #print(line)
-            if line.startswith( "nameserver " ):
+            if line.startswith("nameserver "):
                 self.name_server = line.split(" ")[1]
                 self.name_server = self.name_server.replace("\n","")
                 if self.DEBUG:
-                    print("name server from /etc/resolv.conf: " + str(self.name_server))
-            
+                    print("name server from /etc/resolv.conf:  -->" + str(self.name_server) + "<--")
+            break
 
         #if self.DEBUG:
         #    print("self.persistent_data is now:")
@@ -488,7 +481,7 @@ class HotspotAdapter(Adapter):
             if self.DEBUG:
                 print("Hotspot thing created")
         except Exception as ex:
-            print("Could not create hotspot device:" + str(ex))
+            print("Could not create hotspot device: " + str(ex))
 
 
         # Start the internal clock which is used to handle timers. It also receives messages from the notifier.
@@ -499,8 +492,9 @@ class HotspotAdapter(Adapter):
             self.t.daemon = True
             self.t.start()
             pass
-        except:
-            print("Error starting the clock thread")
+        except Exception as ex:
+            if self.DEBUG:
+                print("caught error starting the clock thread: ", ex)
 
         
         
@@ -1472,7 +1466,7 @@ rsn_pairwise=CCMP"""
                 if self.DEBUG:
                     print("whoa, got a request from a mysterious ip")
                 if ip.startswith('192.168.12.'):
-                    arp_mac = run_command("arp -a -i uap0 | grep " + str(ip) + " | cut -f4 -' '")
+                    arp_mac = run_command("arp -a -i uap0 -i wlan1 | grep " + str(ip) + " | cut -f4 -' '")
                     if valid_mac(str(arp_mac)):
                         self.persistent_data['ip_to_mac'][ip] = str(arp_mac)
                         self.persistent_data['animals'][str(arp_mac)] = {}
@@ -1496,13 +1490,13 @@ rsn_pairwise=CCMP"""
                 print("parsing dhcp line: " + str(line))
             if 'dnsmasq-dhcp' in line:
                 if "client provides name" in line:
-                    print("-spotted client provides name")
+                    print("parse_dhcp -spotted client provides name")
                     potential_name = str(line.split(' ')[-1])
                     potential_name = potential_name.replace('-'," ")
                     potential_name = potential_name.replace('_'," ")
                     new_device['nicename'] = potential_name
 					
-                elif "DHCPDISCOVER(uap0)" in line:
+                elif "DHCPDISCOVER(uap0)" in line or "DHCPDISCOVER(wlan1)":
                     if self.DEBUG:
                         print("-spotted DHCPDISCOVER")
                     potential_mac = extract_mac(line)
@@ -1518,14 +1512,14 @@ rsn_pairwise=CCMP"""
                     potential_vendor = potential_vendor.replace(':'," ")
                     new_device['vendor'] = potential_vendor
 					
-                elif "DHCPOFFER(uap0)" in line:
+                elif "DHCPOFFER(uap0)" in line or "DHCPOFFER(wlan1)" in lin:
                     if self.DEBUG:
                         print("-spotted DHCPOFFER")
                     potential_ip = extract_ip(line)
                     if valid_ip(potential_ip):
                         new_device['ip'] = potential_ip
 						
-                elif "DHCPACK(uap0)" in line or "DHCPREQUEST(uap0)" in line:
+                elif "DHCPACK(uap0)" in line or "DHCPREQUEST(uap0)" in line or "DHCPACK(wlan1)" in line or "DHCPREQUEST(wlan1)" in line:
                     potential_mac = extract_mac(line)
                     if valid_mac(potential_mac):
                         new_device['mac'] = potential_mac
@@ -1620,7 +1614,7 @@ rsn_pairwise=CCMP"""
         if self.DEBUG:
             print("in update dnsmasq")
             
-        if self.dnsmasq_pid == None and self.nmcli_installed == False and self.hostapd_installed == True:
+        if self.nmcli_installed == False and self.dnsmasq_pid == None and self.hostapd_installed == True:
             print("no dnsmasq PID!")
             # https://serverfault.com/questions/723292/dnsmasq-doesnt-automatically-reload-when-entry-is-added-to-etc-hosts
             return

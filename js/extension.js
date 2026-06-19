@@ -60,9 +60,12 @@
             this.interval = null;
 			
 			try{
-                if(document.getElementById('extension-hotspot-menu-item').classList.contains('selected') == false){
-                    this.view.innerHTML = "";
-                }
+				setTimeout(() => {
+	                if(document.getElementById('extension-hotspot-menu-item').classList.contains('selected') == false){
+	                    this.view.innerHTML = "";
+	                }
+				},5000);
+                
 			}
             catch(err){
                 console.error("hotspot: caught error in hide: ", err);
